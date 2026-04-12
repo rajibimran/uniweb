@@ -1,5 +1,3 @@
-import { Stethoscope, HeartPulse, Syringe, Microscope, Eye, Baby } from "lucide-react";
-
 export interface NavItem {
   label: string;
   href: string;
@@ -21,6 +19,7 @@ export interface ServiceDetail {
   heroImage: string;
   description: string;
   benefits: string[];
+  tests: string[];
   pricing: { item: string; price: string; duration: string }[];
   timeline: { step: number; title: string; description: string }[];
   documents: { name: string; required: boolean }[];
@@ -45,13 +44,6 @@ export interface FooterLink {
   href: string;
 }
 
-export interface TeamMember {
-  name: string;
-  role: string;
-  credentials: string;
-  photo: string;
-}
-
 export interface FAQItem {
   question: string;
   answer: string;
@@ -59,253 +51,216 @@ export interface FAQItem {
 
 export interface ComparisonRow {
   feature: string;
-  general: boolean | string;
-  cardiac: boolean | string;
-  blood: boolean | string;
+  physical: boolean | string;
   radiology: boolean | string;
+  laboratory: boolean | string;
+  vaccination: boolean | string;
 }
 
+export interface EquipmentItem {
+  slNo: string;
+  name: string;
+  model: string;
+  qty: string;
+  origin?: string;
+  status?: string;
+}
+
+export interface FitnessCriteria {
+  category: string;
+  description: string;
+  items: string[];
+}
+
+export interface ServicePackage {
+  title: string;
+  description: string;
+  features: string[];
+  pricing: string;
+}
+
+// Navigation — per reference doc (added Report Search, Equipment, Fitness Criteria)
 export const navItems: NavItem[] = [
   { label: "Home", href: "/" },
+  { label: "About Us", href: "/about" },
   { label: "Services", href: "/services" },
-  { label: "About", href: "/about" },
+  { label: "Fitness Criteria", href: "/fitness" },
+  { label: "Medical Equipment", href: "/equipment" },
   { label: "Contact", href: "/contact" },
 ];
 
-export const serviceCategories = ["All", "Screening", "Laboratory", "Imaging", "Preventive"];
+// 4 services per reference doc (not 6)
+export const serviceCategories = ["All", "Examination", "Imaging", "Laboratory", "Preventive"];
 
 export const services: ServiceCard[] = [
   {
     icon: "Stethoscope",
-    title: "General Health Checkup",
-    description: "Comprehensive medical examinations for GCC country requirements with certified reporting.",
-    href: "/services/general-checkup",
-    category: "Screening",
+    title: "Physical Examination",
+    description: "Complete medical examination including visual acuity, system examination, and mental status assessment for GCC requirements.",
+    href: "/services/physical-examination",
+    category: "Examination",
   },
   {
-    icon: "HeartPulse",
-    title: "Cardiac Screening",
-    description: "Advanced ECG and cardiac assessments by experienced cardiologists for overseas employment.",
-    href: "/services/cardiac-screening",
-    category: "Screening",
-  },
-  {
-    icon: "Syringe",
-    title: "Blood Tests & Lab Work",
-    description: "Full blood panel testing including CBC, glucose, liver and kidney function panels.",
-    href: "/services/blood-tests",
-    category: "Laboratory",
-  },
-  {
-    icon: "Microscope",
-    title: "Radiology & Imaging",
-    description: "Digital X-ray, ultrasound, and imaging services with quick turnaround for medical reports.",
-    href: "/services/radiology",
+    icon: "ScanLine",
+    title: "Digital Radiology",
+    description: "Advanced digital chest X-ray using DRGEM GXR-40S system from Korea with radiation protection and quality imaging.",
+    href: "/services/digital-radiology",
     category: "Imaging",
   },
   {
-    icon: "Eye",
-    title: "Vision & Eye Testing",
-    description: "Complete ophthalmic examination including visual acuity, color blindness, and eye pressure tests.",
-    href: "/services/eye-testing",
-    category: "Screening",
+    icon: "TestTubes",
+    title: "Laboratory Tests",
+    description: "Comprehensive lab testing including biochemistry, immunology, hematology, serology, and clinical pathology.",
+    href: "/services/laboratory-tests",
+    category: "Laboratory",
   },
   {
-    icon: "Baby",
-    title: "Vaccination Services",
-    description: "All required vaccinations for GCC travel including meningitis, hepatitis, and typhoid.",
+    icon: "Syringe",
+    title: "Vaccination",
+    description: "Required vaccinations for overseas employment including MMR (Dose 1 & 2) and Meningococcal vaccines.",
     href: "/services/vaccination",
     category: "Preventive",
   },
 ];
 
 export const serviceDetails: Record<string, ServiceDetail> = {
-  "general-checkup": {
-    slug: "general-checkup",
+  "physical-examination": {
+    slug: "physical-examination",
     icon: "Stethoscope",
-    title: "General Health Checkup",
-    category: "Screening",
+    title: "Physical Examination",
+    category: "Examination",
     heroImage: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=1200&h=500&fit=crop",
-    description: "Our General Health Checkup is a comprehensive medical examination designed to meet all GCC country requirements. This thorough assessment covers all major body systems and produces certified reports accepted by GAMCA and all GCC health ministries. Our experienced physicians ensure accurate diagnosis and timely report delivery.",
+    description: "Our Physical Examination service provides a thorough medical assessment meeting all GCC country requirements. Conducted by qualified medical officers, it covers general medical examination, vision testing, system examinations, and mental status evaluation.",
     benefits: [
-      "Full physical examination by certified physicians",
+      "Complete general medical examination by certified physicians",
+      "Visual acuity testing — aided and unaided (colour vision, distant, near, hearing)",
+      "System examination — gastrointestinal, genitourinary, musculoskeletal",
+      "Mental status examination — appearance and cognition assessment",
       "GAMCA-approved reporting format",
-      "Results available within 24–48 hours",
-      "Digital report accessible online",
-      "Covers all GCC country requirements (Saudi, UAE, Kuwait, Qatar, Bahrain, Oman)",
-      "Includes vision, hearing, and basic cardiac assessment",
+      "Separate male and female examination facilities",
+    ],
+    tests: [
+      "Medical Examination: General",
+      "Visual Acuity — Aided and Unaided (Colour Vision, Distant, Near, Hearing)",
+      "System Examination — Gastrointestinal, Genitourinary, Musculoskeletal",
+      "Mental Status Examination — Appearance, Cognition",
     ],
     pricing: [
-      { item: "Standard GCC Medical", price: "৳3,500", duration: "2–3 hours" },
-      { item: "Express GCC Medical", price: "৳5,000", duration: "1–2 hours" },
-      { item: "Executive Health Package", price: "৳8,000", duration: "Half day" },
+      { item: "Standard Physical Examination", price: "Call for Pricing", duration: "1–2 hours" },
+      { item: "Express Examination", price: "Call for Pricing", duration: "45 min–1 hour" },
     ],
     timeline: [
-      { step: 1, title: "Registration", description: "Arrive with documents and complete registration at the front desk." },
-      { step: 2, title: "Sample Collection", description: "Blood and urine samples collected by certified lab technicians." },
-      { step: 3, title: "Physical Examination", description: "Comprehensive examination by a licensed physician." },
-      { step: 4, title: "Imaging & Tests", description: "X-ray and any additional diagnostic tests as required." },
-      { step: 5, title: "Report Generation", description: "Reports compiled, reviewed, and made available for pickup or online." },
+      { step: 1, title: "Registration", description: "Present documents at reception and complete registration." },
+      { step: 2, title: "Vision & Hearing Test", description: "Visual acuity and hearing assessment by trained technician." },
+      { step: 3, title: "Physical Examination", description: "Comprehensive examination by medical officer (male/female)." },
+      { step: 4, title: "Mental Status Check", description: "Cognitive and appearance evaluation." },
+      { step: 5, title: "Report", description: "Findings documented in your medical file." },
     ],
     documents: [
       { name: "Valid Passport (Original + Copy)", required: true },
       { name: "2 Passport-size Photos", required: true },
       { name: "GAMCA Slip / Token Number", required: true },
       { name: "Previous Medical Reports (if any)", required: false },
-      { name: "Employment Visa Copy", required: false },
     ],
-    relatedSlugs: ["cardiac-screening", "blood-tests", "eye-testing"],
+    relatedSlugs: ["digital-radiology", "laboratory-tests", "vaccination"],
   },
-  "cardiac-screening": {
-    slug: "cardiac-screening",
-    icon: "HeartPulse",
-    title: "Cardiac Screening",
-    category: "Screening",
-    heroImage: "https://images.unsplash.com/photo-1559757175-7cb057fba93c?w=1200&h=500&fit=crop",
-    description: "Our Cardiac Screening service provides advanced ECG and cardiac assessments conducted by experienced cardiologists. Essential for overseas employment medical clearance, this service ensures thorough evaluation of heart health with quick, reliable results.",
-    benefits: [
-      "12-lead ECG with cardiologist interpretation",
-      "Blood pressure and pulse assessment",
-      "Cardiac risk factor evaluation",
-      "Same-day results for ECG",
-      "Referral support for further evaluation if needed",
-      "Accepted by all GCC health ministries",
-    ],
-    pricing: [
-      { item: "Standard ECG", price: "৳800", duration: "30 minutes" },
-      { item: "ECG + Consultation", price: "৳1,500", duration: "1 hour" },
-      { item: "Comprehensive Cardiac Panel", price: "৳4,500", duration: "2 hours" },
-    ],
-    timeline: [
-      { step: 1, title: "Check-in", description: "Register at reception with your medical file." },
-      { step: 2, title: "ECG Recording", description: "12-lead ECG performed by trained technician." },
-      { step: 3, title: "Cardiologist Review", description: "Results reviewed and interpreted by specialist." },
-      { step: 4, title: "Report Delivery", description: "Report issued same day or next morning." },
-    ],
-    documents: [
-      { name: "Valid Passport or National ID", required: true },
-      { name: "Referral Letter (if applicable)", required: false },
-      { name: "Previous Cardiac Reports", required: false },
-    ],
-    relatedSlugs: ["general-checkup", "blood-tests", "radiology"],
-  },
-  "blood-tests": {
-    slug: "blood-tests",
-    icon: "Syringe",
-    title: "Blood Tests & Lab Work",
-    category: "Laboratory",
-    heroImage: "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=1200&h=500&fit=crop",
-    description: "Our state-of-the-art laboratory offers a full range of blood panel testing including CBC, glucose, liver and kidney function panels. All tests are processed with modern automated analyzers ensuring accuracy and fast turnaround times.",
-    benefits: [
-      "Automated analyzers for high accuracy",
-      "Complete blood count (CBC) and differential",
-      "Liver function tests (LFT) and kidney function tests (KFT)",
-      "Blood glucose and HbA1c testing",
-      "Hepatitis B & C, HIV screening",
-      "Results within 4–24 hours",
-    ],
-    pricing: [
-      { item: "Basic Blood Panel (CBC + Blood Group)", price: "৳600", duration: "4 hours" },
-      { item: "Comprehensive Panel", price: "৳2,000", duration: "24 hours" },
-      { item: "Full GCC Screening Panel", price: "৳3,000", duration: "24 hours" },
-    ],
-    timeline: [
-      { step: 1, title: "Fasting Check", description: "Confirm 8-12 hour fasting for accurate results." },
-      { step: 2, title: "Sample Collection", description: "Blood drawn by certified phlebotomist." },
-      { step: 3, title: "Lab Processing", description: "Samples analyzed using automated equipment." },
-      { step: 4, title: "Result Delivery", description: "Digital report sent via SMS/email or collected in person." },
-    ],
-    documents: [
-      { name: "Valid ID (Passport or NID)", required: true },
-      { name: "Doctor's Prescription (if applicable)", required: false },
-      { name: "Previous Lab Reports", required: false },
-    ],
-    relatedSlugs: ["general-checkup", "cardiac-screening", "vaccination"],
-  },
-  "radiology": {
-    slug: "radiology",
-    icon: "Microscope",
-    title: "Radiology & Imaging",
+  "digital-radiology": {
+    slug: "digital-radiology",
+    icon: "ScanLine",
+    title: "Digital Radiology",
     category: "Imaging",
     heroImage: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=1200&h=500&fit=crop",
-    description: "Our Radiology department features digital X-ray and ultrasound imaging services. Staffed by experienced radiologists and technicians, we provide quick turnaround times for medical reports required for GCC employment and health certification.",
+    description: "Our Digital Radiology department features the DRGEM GXR-40S digital X-ray system from Korea, providing high-quality chest X-ray imaging with minimal radiation exposure and a complete radiation protection system.",
     benefits: [
-      "Digital X-ray with minimal radiation exposure",
-      "Ultrasound imaging for abdominal assessment",
-      "Reports reviewed by certified radiologists",
-      "Same-day report delivery for X-rays",
-      "DICOM-compliant digital storage",
-      "Clean, modern imaging facilities",
+      "Digital X-ray with DR Machine (DRGEM-KOREA) 500mm",
+      "Minimal radiation exposure with protection system",
+      "High-resolution digital imaging for accurate diagnosis",
+      "Same-day report delivery",
+      "Quality X-ray film and auto processor",
+      "Certified radiologist review",
+    ],
+    tests: [
+      "Chest X-ray (PA View)",
     ],
     pricing: [
-      { item: "Chest X-ray (PA View)", price: "৳500", duration: "30 minutes" },
-      { item: "Abdominal Ultrasound", price: "৳1,200", duration: "1 hour" },
-      { item: "Full Imaging Package", price: "৳3,000", duration: "2 hours" },
+      { item: "Chest X-ray", price: "Call for Pricing", duration: "30 minutes" },
     ],
     timeline: [
-      { step: 1, title: "Registration", description: "Check in with your referral or medical file." },
-      { step: 2, title: "Preparation", description: "Change into gown if required, remove metal objects." },
-      { step: 3, title: "Imaging", description: "X-ray or ultrasound performed by certified technician." },
+      { step: 1, title: "Registration", description: "Check in with your medical file at radiology." },
+      { step: 2, title: "Preparation", description: "Change into gown, remove metal objects." },
+      { step: 3, title: "Imaging", description: "Chest X-ray performed by certified radiographer." },
       { step: 4, title: "Report", description: "Radiologist reviews images and issues report." },
     ],
     documents: [
-      { name: "Valid ID", required: true },
-      { name: "Doctor's Referral", required: false },
-      { name: "Previous Imaging Reports", required: false },
+      { name: "Valid Passport or National ID", required: true },
+      { name: "GAMCA Slip", required: true },
     ],
-    relatedSlugs: ["general-checkup", "cardiac-screening", "blood-tests"],
+    relatedSlugs: ["physical-examination", "laboratory-tests", "vaccination"],
   },
-  "eye-testing": {
-    slug: "eye-testing",
-    icon: "Eye",
-    title: "Vision & Eye Testing",
-    category: "Screening",
-    heroImage: "https://images.unsplash.com/photo-1577401239170-897c0ddf tried?w=1200&h=500&fit=crop",
-    description: "Complete ophthalmic examination covering visual acuity, color blindness, and intraocular pressure testing. Our eye testing service meets all GCC requirements for overseas employment medical clearance.",
+  "laboratory-tests": {
+    slug: "laboratory-tests",
+    icon: "TestTubes",
+    title: "Laboratory Tests",
+    category: "Laboratory",
+    heroImage: "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=1200&h=500&fit=crop",
+    description: "Our state-of-the-art laboratory performs comprehensive testing across biochemistry, immunology, hematology, serology, and clinical pathology using automated analyzers for maximum accuracy and rapid turnaround.",
     benefits: [
-      "Visual acuity testing (distance and near)",
-      "Color blindness assessment (Ishihara test)",
-      "Intraocular pressure measurement",
-      "Basic slit-lamp examination",
-      "Certified results for GCC medical reports",
-      "Prescription recommendation if needed",
+      "Automated analyzers — Dimension EXL (Biochemistry), Sysmex XN-550 (Hematology)",
+      "ELISA full set — Evolis Twin Plus by BIO-RAD (Immunology)",
+      "Daily QC/Calibration for consistent, reliable results",
+      "Barcode-based sample tracking system",
+      "Results within 24 hours",
+      "Bio Safety Cabinet Class II for safe sample handling",
+    ],
+    tests: [
+      "Biochemistry — R.B.S, L.F.T, Creatinine",
+      "Immunology",
+      "Hematology",
+      "Serology — HIV I & II, HBs Ag, Anti HCV, VDRL, TPHA (if VDRL positive), Pregnancy Test",
+      "Clinical Pathology — Urine (Sugar, Albumin)",
+      "Clinical Pathology — Stool (Routine: Helminthes, OVA, CYST, Others)",
     ],
     pricing: [
-      { item: "Basic Vision Test", price: "৳400", duration: "20 minutes" },
-      { item: "Comprehensive Eye Exam", price: "৳1,000", duration: "45 minutes" },
-      { item: "Eye Exam + Prescription", price: "৳1,500", duration: "1 hour" },
+      { item: "Standard Lab Panel", price: "Call for Pricing", duration: "24 hours" },
+      { item: "Full GCC Screening Panel", price: "Call for Pricing", duration: "24 hours" },
     ],
     timeline: [
-      { step: 1, title: "Registration", description: "Check in at the ophthalmology counter." },
-      { step: 2, title: "Preliminary Tests", description: "Auto-refraction and visual acuity measured." },
-      { step: 3, title: "Detailed Examination", description: "Color vision, pressure, and slit-lamp exam." },
-      { step: 4, title: "Report", description: "Results documented in your medical file." },
+      { step: 1, title: "Fasting Check", description: "Confirm 8–12 hour fasting for accurate blood results." },
+      { step: 2, title: "Sample Collection", description: "Blood, urine, and stool samples collected." },
+      { step: 3, title: "Lab Processing", description: "Samples analyzed using automated equipment." },
+      { step: 4, title: "Result Delivery", description: "Reports available within 24 hours." },
     ],
     documents: [
-      { name: "Valid ID", required: true },
-      { name: "Current Eyeglasses (if worn)", required: false },
+      { name: "Valid Passport or NID", required: true },
+      { name: "GAMCA Slip", required: true },
+      { name: "Previous Lab Reports (if any)", required: false },
     ],
-    relatedSlugs: ["general-checkup", "cardiac-screening", "vaccination"],
+    relatedSlugs: ["physical-examination", "digital-radiology", "vaccination"],
   },
   "vaccination": {
     slug: "vaccination",
-    icon: "Baby",
-    title: "Vaccination Services",
+    icon: "Syringe",
+    title: "Vaccination",
     category: "Preventive",
     heroImage: "https://images.unsplash.com/photo-1615631648086-325025c9e51e?w=1200&h=500&fit=crop",
-    description: "We provide all required vaccinations for GCC travel and overseas employment including meningitis, hepatitis A & B, typhoid, and seasonal influenza. All vaccines are WHO-approved and administered by trained nursing staff.",
+    description: "We provide all required vaccinations for overseas employment including MMR (Measles, Mumps, Rubella) in two doses and Meningococcal vaccination. All vaccines are WHO-approved and administered by trained nursing staff.",
     benefits: [
       "WHO-approved vaccines only",
-      "Meningococcal (ACWY) vaccination",
-      "Hepatitis A & B immunization",
-      "Typhoid vaccination",
-      "Yellow fever (with international certificate)",
+      "MMR Dose 1 & Dose 2",
+      "Meningococcal vaccination",
       "Digital vaccination record maintained",
+      "Administered by trained nursing staff",
+      "Post-vaccination observation period",
+    ],
+    tests: [
+      "MMR 1 (Measles, Mumps, Rubella — Dose 1)",
+      "MMR 2 (Measles, Mumps, Rubella — Dose 2)",
+      "Meningococcal Vaccine",
     ],
     pricing: [
-      { item: "Meningitis Vaccine", price: "৳1,500", duration: "15 minutes" },
-      { item: "Hepatitis B (3-dose series)", price: "৳3,000", duration: "6 months" },
-      { item: "Complete Travel Vaccine Package", price: "৳5,500", duration: "1 visit" },
+      { item: "MMR Vaccine (per dose)", price: "Call for Pricing", duration: "15 minutes" },
+      { item: "Meningococcal Vaccine", price: "Call for Pricing", duration: "15 minutes" },
+      { item: "Complete Vaccination Package", price: "Call for Pricing", duration: "1 visit" },
     ],
     timeline: [
       { step: 1, title: "Consultation", description: "Nurse reviews travel requirements and medical history." },
@@ -315,105 +270,64 @@ export const serviceDetails: Record<string, ServiceDetail> = {
     ],
     documents: [
       { name: "Valid Passport", required: true },
-      { name: "Previous Vaccination Records", required: false },
-      { name: "Travel Itinerary", required: false },
+      { name: "Previous Vaccination Records (if any)", required: false },
     ],
-    relatedSlugs: ["general-checkup", "blood-tests", "eye-testing"],
+    relatedSlugs: ["physical-examination", "laboratory-tests", "digital-radiology"],
   },
 };
 
+// Comparison table — updated for 4 services
 export const comparisonData: ComparisonRow[] = [
-  { feature: "Physical Examination", general: true, cardiac: false, blood: false, radiology: false },
-  { feature: "ECG / Cardiac Test", general: "Basic", cardiac: true, blood: false, radiology: false },
-  { feature: "Blood Panel (CBC)", general: true, cardiac: false, blood: true, radiology: false },
-  { feature: "Liver & Kidney Function", general: true, cardiac: false, blood: true, radiology: false },
-  { feature: "Chest X-Ray", general: true, cardiac: false, blood: false, radiology: true },
-  { feature: "Vision Testing", general: true, cardiac: false, blood: false, radiology: false },
-  { feature: "Report Turnaround", general: "24–48 hrs", cardiac: "Same day", blood: "4–24 hrs", radiology: "Same day" },
-  { feature: "Starting Price", general: "৳3,500", cardiac: "৳800", blood: "৳600", radiology: "৳500" },
+  { feature: "General Medical Exam", physical: true, radiology: false, laboratory: false, vaccination: false },
+  { feature: "Visual Acuity & Hearing", physical: true, radiology: false, laboratory: false, vaccination: false },
+  { feature: "System Examination", physical: true, radiology: false, laboratory: false, vaccination: false },
+  { feature: "Chest X-ray", physical: false, radiology: true, laboratory: false, vaccination: false },
+  { feature: "Blood Tests (CBC, Biochemistry)", physical: false, radiology: false, laboratory: true, vaccination: false },
+  { feature: "Serology (HIV, HBs Ag, HCV, VDRL)", physical: false, radiology: false, laboratory: true, vaccination: false },
+  { feature: "Urine & Stool Analysis", physical: false, radiology: false, laboratory: true, vaccination: false },
+  { feature: "MMR & Meningococcal", physical: false, radiology: false, laboratory: false, vaccination: true },
+  { feature: "Report Turnaround", physical: "Same day", radiology: "Same day", laboratory: "24 hours", vaccination: "Immediate" },
 ];
 
+// Stats — per reference doc (NO Trusted Clients)
+export const stats: StatItem[] = [
+  { label: "Accuracy Rate", value: 100, suffix: "%" },
+  { label: "Report Delivery", value: 24, suffix: "h" },
+];
+
+// FAQ updated for actual services
 export const serviceFAQs: FAQItem[] = [
   {
     question: "What documents do I need for a GCC medical checkup?",
     answer: "You will need your valid passport (original and copy), 2 passport-size photos, and your GAMCA slip or token number. If you have previous medical reports, please bring those as well.",
   },
   {
-    question: "How long does the medical examination take?",
-    answer: "A standard GCC medical checkup typically takes 2–3 hours. Express services are available and can be completed in 1–2 hours for an additional fee.",
-  },
-  {
-    question: "When will I receive my medical report?",
-    answer: "Standard reports are available within 24–48 hours. Express reports can be ready the same day. You can check your report status online through our website.",
+    question: "How long does the complete medical screening take?",
+    answer: "The complete screening including physical examination, radiology, lab tests, and vaccination typically takes 2–3 hours. Reports are delivered within 24 hours.",
   },
   {
     question: "Do I need to fast before the medical checkup?",
     answer: "Yes, we recommend 8–12 hours of fasting before your appointment for accurate blood test results. You may drink water during the fasting period.",
   },
   {
+    question: "What lab tests are included in the screening?",
+    answer: "Our lab panel includes Biochemistry (R.B.S, L.F.T, Creatinine), Immunology, Hematology, Serology (HIV I&II, HBs Ag, Anti HCV, VDRL, TPHA if VDRL positive, Pregnancy), and Clinical Pathology (Urine and Stool analysis).",
+  },
+  {
+    question: "Which vaccinations are required for GCC countries?",
+    answer: "MMR (Measles, Mumps, Rubella) in two doses and Meningococcal vaccination are required. Our team will advise on the specific requirements for your destination country.",
+  },
+  {
     question: "Is your center approved by GAMCA?",
     answer: "Yes, Unicare Medical is fully approved by GAMCA (GCC Approved Medical Centers Association) and all GCC health ministries including Saudi Arabia, UAE, Kuwait, Qatar, Bahrain, and Oman.",
   },
   {
-    question: "Can I book an appointment online?",
-    answer: "Yes, you can book an appointment through our website or by calling our reception. Walk-in patients are also welcome, though appointments are recommended to minimize wait times.",
+    question: "Can I check my report online?",
+    answer: "Yes, you can check your medical report status online through our Report Search portal accessible from the navigation menu. You'll need your Patient ID and registered phone number.",
   },
 ];
 
-export const teamMembers: TeamMember[] = [
-  {
-    name: "Dr. Anwar Hossain",
-    role: "Chief Medical Officer",
-    credentials: "MBBS, FCPS (Medicine), 20+ years experience",
-    photo: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=300&h=300&fit=crop&crop=face",
-  },
-  {
-    name: "Dr. Sultana Begum",
-    role: "Senior Radiologist",
-    credentials: "MBBS, DMRD, 15+ years experience",
-    photo: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&h=300&fit=crop&crop=face",
-  },
-  {
-    name: "Dr. Kamal Uddin",
-    role: "Cardiologist",
-    credentials: "MBBS, MD (Cardiology), 12+ years experience",
-    photo: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&h=300&fit=crop&crop=face",
-  },
-  {
-    name: "Dr. Nasreen Akter",
-    role: "Ophthalmologist",
-    credentials: "MBBS, DO, 10+ years experience",
-    photo: "https://images.unsplash.com/photo-1594824476967-48c8b964ac31?w=300&h=300&fit=crop&crop=face",
-  },
-  {
-    name: "Dr. Rafiqul Islam",
-    role: "Pathologist",
-    credentials: "MBBS, M.Phil (Pathology), 14+ years experience",
-    photo: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=300&h=300&fit=crop&crop=face",
-  },
-  {
-    name: "Nurse Ayesha Siddiqua",
-    role: "Head Nurse",
-    credentials: "BSN, 8+ years clinical experience",
-    photo: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=300&h=300&fit=crop&crop=face",
-  },
-];
-
-export const facilityImages: { src: string; alt: string }[] = [
-  { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&h=400&fit=crop", alt: "Modern reception area" },
-  { src: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=600&h=600&fit=crop", alt: "Laboratory equipment" },
-  { src: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=600&h=400&fit=crop", alt: "Radiology department" },
-  { src: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=600&h=600&fit=crop", alt: "Clean examination room" },
-  { src: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=600&h=400&fit=crop", alt: "Medical consultation room" },
-  { src: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=600&h=400&fit=crop", alt: "Patient waiting area" },
-];
-
-export const stats: StatItem[] = [
-  { label: "Years Experience", value: 15, suffix: "+" },
-  { label: "Patients Served", value: 50000, suffix: "+" },
-  { label: "Success Rate", value: 99, suffix: "%" },
-];
-
+// Testimonials
 export const testimonials: Testimonial[] = [
   {
     name: "Mohammad Rahman",
@@ -441,22 +355,126 @@ export const testimonials: Testimonial[] = [
   },
 ];
 
+// Service Packages — per reference doc
+export const servicePackages: ServicePackage[] = [
+  {
+    title: "Overseas Employment Medical Package",
+    description: "Comprehensive health check-up for overseas job candidates.",
+    features: ["Physical Examination", "Chest X-ray", "Full Lab Panel", "Vaccination", "GAMCA Report"],
+    pricing: "Call for Pricing",
+  },
+  {
+    title: "Express 24-Hour Reporting Package",
+    description: "Fast-track medical report generation within 24 hours.",
+    features: ["Priority Processing", "Same-day Lab Results", "Express Report Delivery", "Dedicated Queue"],
+    pricing: "Call for Pricing",
+  },
+  {
+    title: "Corporate/Agency Bulk Medical Package",
+    description: "Specialized packages for recruiting agencies and bulk screenings.",
+    features: ["Bulk Discount Rates", "Dedicated Coordinator", "Group Scheduling", "Agency Dashboard"],
+    pricing: "Call for Pricing",
+  },
+];
+
+// Equipment list — per reference doc
+export const equipmentList: EquipmentItem[] = [
+  { slNo: "01", name: "Digital X-ray with DR Machine (DRGEM-KOREA) 500mm, Auto Processor, Quality X-ray Film, Radiation Protection System", model: "Unit Model-GXR-40S", qty: "1 Set", origin: "Korea", status: "OPERATIONAL" },
+  { slNo: "02", name: "Biochemistry Analyzer (Auto)", model: "Dimension EXL", qty: "1 Set", origin: "USA", status: "OPERATIONAL" },
+  { slNo: "03", name: "Hematology Machine (Mythic)", model: "Brand: Orphee, Model: Mythic-18", qty: "1 Set", origin: "Japan", status: "OPERATIONAL" },
+  { slNo: "04", name: "Immunology ELISA Full Set (Reader, Washer & Shaker)", model: "Evolis Twin Plus (BIO-RAD)", qty: "1 Set", origin: "France", status: "OPERATIONAL" },
+  { slNo: "05", name: "Semi Auto Urine Chemistry Analyzer", model: "Docureader 2", qty: "1 Set" },
+  { slNo: "06", name: "Bio Safety Cabinet (Class-II Type A-2)", model: "Biobase BSC-1300 IIA2X", qty: "1 Set" },
+  { slNo: "07", name: "Roller Mixer", model: "Bio Max", qty: "1 pcs" },
+  { slNo: "08", name: "Lab Rotator", model: "LRD-750N", qty: "1 pcs" },
+  { slNo: "09", name: "Table Top Centrifuge Machine", model: "Eppendorf-5702", qty: "2 pcs" },
+  { slNo: "10", name: "Binocular Microscope", model: "Olympus", qty: "2 pcs" },
+  { slNo: "11", name: "Micropipette & Ancillary Instrument", model: "100–1000µ, 20–200µ, 10–100µ, 5–50µ", qty: "4 pcs" },
+  { slNo: "12", name: "Refrigerator", model: "Singer Super Ariston", qty: "2 pcs" },
+  { slNo: "13", name: "Hot Air Oven", model: "Digisystem DSO-500D", qty: "1 pcs" },
+  { slNo: "14", name: "Lab Incubator", model: "DSI-500D", qty: "1 pcs" },
+  { slNo: "15", name: "Computer", model: "—", qty: "12 Set" },
+  { slNo: "16", name: "IT Server", model: "—", qty: "1 Set" },
+  { slNo: "17", name: "Barcode Printer", model: "Zebra ZD230d", qty: "2 pcs" },
+  { slNo: "18", name: "Ledger Printer", model: "HP Laser MPF 1535a", qty: "2 pcs" },
+  { slNo: "19", name: "Finger Print Detector", model: "ZKTeco", qty: "6 pcs" },
+  { slNo: "20", name: "Patient Bed", model: "—", qty: "2 pcs" },
+];
+
+// Fitness criteria — per reference doc
+export const fitnessCriteria: FitnessCriteria[] = [
+  {
+    category: "Infectious Diseases — Must Be Negative / Non-Reactive",
+    description: "Candidates must test negative for the following infectious diseases.",
+    items: [
+      "HIV / AIDS",
+      "Hepatitis B Surface Antigen (HBs Ag)",
+      "Anti-HCV",
+      "Malaria & Microfilaria",
+      "Leprosy",
+      "Tuberculosis",
+      "Syphilis (VDRL / TPHA)",
+    ],
+  },
+  {
+    category: "Non-Infectious Conditions — Must Be Clear",
+    description: "Candidates must not have the following non-infectious conditions.",
+    items: [
+      "No Chronic Renal Failure",
+      "No Chronic Hepatic Failure",
+      "No Congestive Heart Failure",
+      "No Uncontrolled Hypertension",
+      "No Psychiatric or Neurological Disorders",
+      "No Pleural Effusion or Active TB Evidence",
+    ],
+  },
+  {
+    category: "Additional Requirements",
+    description: "The following additional criteria must be met.",
+    items: [
+      "Pregnancy Test Must Be Negative",
+      "HbA1C Below 10%",
+      "Free from Drug Abuse (Opiates & Cannabis)",
+    ],
+  },
+  {
+    category: "Physical Fitness Requirements",
+    description: "Candidates must meet basic physical fitness standards.",
+    items: [
+      "No Physical Deformities affecting work capability",
+      "Adequate visual acuity (aided or unaided)",
+      "Normal hearing ability",
+      "Adequate musculoskeletal function",
+    ],
+  },
+];
+
+// Gallery images
+export const facilityImages: { src: string; alt: string }[] = [
+  { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&h=400&fit=crop", alt: "Reception area" },
+  { src: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=600&h=600&fit=crop", alt: "Laboratory equipment" },
+  { src: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=600&h=400&fit=crop", alt: "X-ray room" },
+  { src: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=600&h=600&fit=crop", alt: "Examination room" },
+  { src: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=600&h=400&fit=crop", alt: "Sample collection area" },
+  { src: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=600&h=400&fit=crop", alt: "Patient waiting area" },
+];
+
 export const footerQuickLinks: FooterLink[] = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
   { label: "Our Services", href: "/services" },
+  { label: "Fitness Criteria", href: "/fitness" },
+  { label: "Report Search", href: "/reports" },
   { label: "Contact", href: "/contact" },
-  { label: "Check Report", href: "/report" },
 ];
 
 export const footerServices: FooterLink[] = [
-  { label: "General Checkup", href: "/services/general-checkup" },
-  { label: "Blood Tests", href: "/services/blood-tests" },
-  { label: "Cardiac Screening", href: "/services/cardiac-screening" },
-  { label: "Radiology", href: "/services/radiology" },
+  { label: "Physical Examination", href: "/services/physical-examination" },
+  { label: "Digital Radiology", href: "/services/digital-radiology" },
+  { label: "Laboratory Tests", href: "/services/laboratory-tests" },
   { label: "Vaccination", href: "/services/vaccination" },
 ];
 
 export const certificationLogos: string[] = [
-  "GAMCA", "BMET", "WHO", "ISO 9001", "MOH Kuwait", "MOH Saudi",
+  "GAMCA", "BMET", "WHO", "MOH Kuwait", "MOH Saudi", "MOH UAE",
 ];

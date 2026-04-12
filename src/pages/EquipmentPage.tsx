@@ -1,0 +1,115 @@
+import { Wrench } from "lucide-react";
+import Layout from "@/components/layout/Layout";
+import { equipmentList, type EquipmentItem } from "@/data/mockData";
+
+interface EquipmentPageProps {
+  equipment?: EquipmentItem[];
+}
+
+const EquipmentPage = ({ equipment = equipmentList }: EquipmentPageProps) => {
+  // Highlight major equipment
+  const majorEquipment = equipment.filter((e) => e.origin && e.status);
+  const allEquipment = equipment;
+
+  return (
+    <Layout>
+      <section className="bg-primary py-[48px]">
+        <div className="container text-center">
+          <h1 className="font-heading text-4xl font-bold text-primary-foreground">Medical Equipment</h1>
+          <p className="mt-[8px] font-body text-base text-primary-foreground/80 max-w-xl mx-auto">
+            State-of-the-art medical equipment ensuring precision, speed, and reliability in diagnostics.
+          </p>
+        </div>
+      </section>
+
+      {/* Key Equipment Cards */}
+      <section className="py-[48px]">
+        <div className="container">
+          <div className="text-center mb-[32px]">
+            <h2 className="font-heading text-2xl font-bold text-foreground">Key Diagnostic Equipment</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-[24px] sm:grid-cols-2 lg:grid-cols-3">
+            {majorEquipment.map((eq) => (
+              <div key={eq.slNo} className="rounded-lg border border-border bg-card p-[24px]">
+                <div className="flex h-[48px] w-[48px] items-center justify-center rounded-lg bg-primary/10 mb-[16px]">
+                  <Wrench className="h-[24px] w-[24px] text-primary" />
+                </div>
+                <h3 className="font-heading text-base font-semibold text-foreground">{eq.name.split(",")[0]}</h3>
+                <p className="mt-[4px] font-body text-xs text-muted-foreground">{eq.model}</p>
+                <div className="mt-[16px] flex items-center justify-between">
+                  {eq.origin && (
+                    <span className="font-body text-xs text-muted-foreground">Origin: {eq.origin}</span>
+                  )}
+                  {eq.status && (
+                    <span className="rounded bg-accent/10 px-[8px] py-[2px] font-heading text-xs font-semibold text-accent">
+                      {eq.status}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Full Equipment Table */}
+      <section className="bg-muted py-[48px]">
+        <div className="container">
+          <div className="text-center mb-[32px]">
+            <h2 className="font-heading text-2xl font-bold text-foreground">Complete Equipment List</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px] border-collapse bg-card rounded-lg overflow-hidden">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="p-[16px] text-left font-heading text-sm font-semibold text-foreground w-[60px]">Sl.</th>
+                  <th className="p-[16px] text-left font-heading text-sm font-semibold text-foreground">Equipment Name</th>
+                  <th className="p-[16px] text-left font-heading text-sm font-semibold text-foreground">Model</th>
+                  <th className="p-[16px] text-center font-heading text-sm font-semibold text-foreground w-[80px]">Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allEquipment.map((eq, i) => (
+                  <tr key={eq.slNo} className={i % 2 === 0 ? "bg-card" : "bg-muted/50"}>
+                    <td className="p-[16px] font-body text-sm text-muted-foreground">{eq.slNo}</td>
+                    <td className="p-[16px] font-body text-sm text-foreground">{eq.name}</td>
+                    <td className="p-[16px] font-body text-sm text-muted-foreground">{eq.model}</td>
+                    <td className="p-[16px] text-center font-body text-sm text-foreground">{eq.qty}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Quality Assurance */}
+      <section className="py-[48px]">
+        <div className="container">
+          <div className="grid grid-cols-1 gap-[24px] sm:grid-cols-3">
+            <div className="rounded-lg border border-border bg-card p-[24px] text-center">
+              <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Precision</h3>
+              <p className="font-body text-sm text-muted-foreground">
+                Automated systems minimize human error in chemical and biological analysis.
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-[24px] text-center">
+              <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Speed</h3>
+              <p className="font-body text-sm text-muted-foreground">
+                High-throughput analyzers allow us to process thousands of samples daily.
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-[24px] text-center">
+              <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Reliability</h3>
+              <p className="font-body text-sm text-muted-foreground">
+                Daily QC/Calibration and regular maintenance for consistency.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </Layout>
+  );
+};
+
+export default EquipmentPage;

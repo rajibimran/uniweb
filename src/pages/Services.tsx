@@ -1,25 +1,17 @@
 import { useState } from "react";
-import { Stethoscope, HeartPulse, Syringe, Microscope, Eye, Baby, Check, X as XIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Stethoscope, ScanLine, TestTubes, Syringe, Check, X as XIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import Layout from "@/components/layout/Layout";
 import {
-  services,
-  serviceCategories,
-  comparisonData,
-  serviceFAQs,
-  type ServiceCard,
-  type ComparisonRow,
-  type FAQItem,
+  services, serviceCategories, comparisonData, serviceFAQs,
+  type ServiceCard, type ComparisonRow, type FAQItem,
 } from "@/data/mockData";
 
 const iconMap: Record<string, React.ElementType> = {
-  Stethoscope, HeartPulse, Syringe, Microscope, Eye, Baby,
+  Stethoscope, ScanLine, TestTubes, Syringe,
 };
 
 interface ServicesSectionProps {
@@ -43,7 +35,6 @@ const Services = ({
 
   return (
     <Layout>
-      {/* Page Header */}
       <section className="bg-primary py-[48px]">
         <div className="container text-center">
           <h1 className="font-heading text-4xl font-bold text-primary-foreground">Our Services</h1>
@@ -53,7 +44,6 @@ const Services = ({
         </div>
       </section>
 
-      {/* Filter Tabs */}
       <section className="py-[48px]">
         <div className="container">
           <div className="flex flex-wrap gap-[8px] mb-[32px] justify-center">
@@ -72,14 +62,13 @@ const Services = ({
             ))}
           </div>
 
-          {/* Service Cards Grid */}
-          <div className="grid grid-cols-1 gap-[32px] sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-[32px] sm:grid-cols-2">
             {filtered.map((service) => {
               const Icon = iconMap[service.icon] || Stethoscope;
               return (
-                <a
+                <Link
                   key={service.title}
-                  href={service.href}
+                  to={service.href}
                   className="group rounded-lg border border-border bg-card p-[24px] transition-shadow hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)]"
                 >
                   <div className="mb-[16px] flex h-[48px] w-[48px] items-center justify-center rounded-lg bg-primary/10">
@@ -95,7 +84,7 @@ const Services = ({
                   <span className="mt-[16px] inline-block font-heading text-sm font-semibold text-primary group-hover:text-primary/80">
                     Learn More →
                   </span>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -107,35 +96,28 @@ const Services = ({
         <div className="container">
           <div className="text-center mb-[32px]">
             <h2 className="font-heading text-2xl font-bold text-foreground">Compare Our Services</h2>
-            <p className="mt-[8px] font-body text-sm text-muted-foreground">
-              See what's included in each service package at a glance.
-            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] border-collapse bg-card rounded-lg overflow-hidden">
               <thead>
                 <tr className="border-b border-border">
                   <th className="p-[16px] text-left font-heading text-sm font-semibold text-foreground">Feature</th>
-                  <th className="p-[16px] text-center font-heading text-sm font-semibold text-foreground">General Checkup</th>
-                  <th className="p-[16px] text-center font-heading text-sm font-semibold text-foreground">Cardiac</th>
-                  <th className="p-[16px] text-center font-heading text-sm font-semibold text-foreground">Blood Tests</th>
+                  <th className="p-[16px] text-center font-heading text-sm font-semibold text-foreground">Physical Exam</th>
                   <th className="p-[16px] text-center font-heading text-sm font-semibold text-foreground">Radiology</th>
+                  <th className="p-[16px] text-center font-heading text-sm font-semibold text-foreground">Lab Tests</th>
+                  <th className="p-[16px] text-center font-heading text-sm font-semibold text-foreground">Vaccination</th>
                 </tr>
               </thead>
               <tbody>
                 {comparison.map((row, i) => (
                   <tr key={row.feature} className={i % 2 === 0 ? "bg-card" : "bg-muted/50"}>
                     <td className="p-[16px] font-body text-sm text-foreground">{row.feature}</td>
-                    {(["general", "cardiac", "blood", "radiology"] as const).map((key) => {
+                    {(["physical", "radiology", "laboratory", "vaccination"] as const).map((key) => {
                       const val = row[key];
                       return (
                         <td key={key} className="p-[16px] text-center">
                           {typeof val === "boolean" ? (
-                            val ? (
-                              <Check className="mx-auto h-5 w-5 text-accent" />
-                            ) : (
-                              <XIcon className="mx-auto h-5 w-5 text-muted-foreground/40" />
-                            )
+                            val ? <Check className="mx-auto h-5 w-5 text-accent" /> : <XIcon className="mx-auto h-5 w-5 text-muted-foreground/40" />
                           ) : (
                             <span className="font-body text-sm text-foreground">{val}</span>
                           )}
