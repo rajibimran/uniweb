@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   Stethoscope, ScanLine, TestTubes, Syringe,
@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 
 const iconMap: Record<string, React.ElementType> = {
   Stethoscope, ScanLine, TestTubes, Syringe,
@@ -45,6 +46,7 @@ interface FormErrors {
 }
 
 const BookAppointment = () => {
+  useEffect(() => { document.title = "Book Appointment — Unicare Medical, Dhaka"; }, []);
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -163,6 +165,8 @@ const BookAppointment = () => {
         title="Book Appointment"
         subtitle="Schedule your medical examination in three simple steps."
       />
+
+      <PageBreadcrumb items={[{ label: "Book Appointment" }]} />
 
       <section className="py-[48px]">
         <div className="container flex justify-center">
