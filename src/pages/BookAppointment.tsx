@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   Stethoscope, ScanLine, TestTubes, Syringe,
-  ChevronRight, ChevronLeft, Loader2, CheckCircle, CalendarIcon,
+  ChevronRight, ChevronLeft, Loader2, CheckCircle, CalendarIcon, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
