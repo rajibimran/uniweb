@@ -169,7 +169,11 @@ const BookAppointment = () => {
       <PageBreadcrumb items={[{ label: "Book Appointment" }]} />
 
       <section className="py-[48px]">
-        <div className="container flex justify-center">
+        <div className="container flex flex-col items-center">
+          <div className="flex items-center gap-[8px] mb-[16px]">
+            <ShieldCheck className="h-5 w-5 text-accent" />
+            <span className="font-body text-xs text-muted-foreground">Secure Booking — Your data is protected</span>
+          </div>
           <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-[32px] shadow-[0_4px_8px_rgba(0,0,0,0.1)]">
             <div className="mb-[32px]">
               <div className="flex justify-between mb-[8px]">
