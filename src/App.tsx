@@ -7,6 +7,9 @@ import Index from "./pages/Index.tsx";
 import Services from "./pages/Services.tsx";
 import ServiceDetail from "./pages/ServiceDetail.tsx";
 import About from "./pages/About.tsx";
+import BookAppointment from "./pages/BookAppointment.tsx";
+import ReportCheck from "./pages/ReportCheck.tsx";
+import ScreeningProcess from "./pages/ScreeningProcess.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -22,6 +25,9 @@ const App = () => (
           <Route path="/services" element={<Services />} />
           <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/about" element={<About />} />
+          <Route path="/book" element={<BookAppointment />} />
+          <Route path="/reports" element={<ReportCheck />} />
+          <Route path="/process" element={<ScreeningProcess />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
