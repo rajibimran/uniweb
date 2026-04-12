@@ -1,5 +1,6 @@
 import { ShieldCheck, ShieldAlert, AlertTriangle, Dumbbell } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import PageHeroSlider from "@/components/PageHeroSlider";
 import { fitnessCriteria, type FitnessCriteria } from "@/data/mockData";
 
 const categoryIcons: Record<string, React.ElementType> = {
@@ -9,6 +10,12 @@ const categoryIcons: Record<string, React.ElementType> = {
   "Physical Fitness Requirements": Dumbbell,
 };
 
+const heroImages = [
+  { src: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1600&h=900&fit=crop", alt: "Fitness assessment" },
+  { src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1600&h=900&fit=crop", alt: "Medical screening" },
+  { src: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=1600&h=900&fit=crop", alt: "Health certification" },
+];
+
 interface FitnessPageProps {
   criteria?: FitnessCriteria[];
 }
@@ -16,17 +23,24 @@ interface FitnessPageProps {
 const FitnessPage = ({ criteria = fitnessCriteria }: FitnessPageProps) => {
   return (
     <Layout>
-      <section className="bg-primary py-[48px]">
-        <div className="container text-center">
-          <h1 className="font-heading text-4xl font-bold text-primary-foreground">Fitness Criteria</h1>
-          <p className="mt-[8px] font-body text-base text-primary-foreground/80 max-w-xl mx-auto">
-            Health requirements for overseas employment certification. Candidates must meet the following criteria to be certified fit.
-          </p>
-        </div>
-      </section>
+      <PageHeroSlider
+        images={heroImages}
+        title="Fitness Criteria"
+        subtitle="Health requirements for overseas employment certification. Candidates must meet the following criteria to be certified fit."
+      />
 
       <section className="py-[48px]">
         <div className="container max-w-4xl">
+          {/* Info image */}
+          <div className="mb-[32px] rounded-lg overflow-hidden">
+            <img
+              src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=900&h=350&fit=crop"
+              alt="Medical professional reviewing health criteria"
+              className="w-full h-[250px] object-cover"
+              loading="lazy"
+            />
+          </div>
+
           <div className="space-y-[32px]">
             {criteria.map((group, i) => {
               const Icon = categoryIcons[group.category] || ShieldCheck;

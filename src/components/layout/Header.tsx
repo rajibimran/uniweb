@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, Plus, Phone } from "lucide-react";
+import { Menu, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -28,12 +28,11 @@ const Header = ({ items = navItems }: HeaderProps) => {
       <div className="container flex h-[64px] items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-[8px]">
-          <div className="flex h-[40px] w-[40px] items-center justify-center rounded-lg bg-primary">
-            <Plus className="h-[24px] w-[24px] text-primary-foreground" strokeWidth={3} />
-          </div>
-          <span className="font-heading text-lg font-bold text-foreground">
-            Unicare Medical
-          </span>
+          <img
+            src="https://unicaremedicalbd.co/assets/img/logo.png"
+            alt="Unicare Medical Services Logo"
+            className="h-[44px] w-auto"
+          />
         </Link>
 
         {/* Desktop Nav */}

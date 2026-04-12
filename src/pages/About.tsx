@@ -1,6 +1,13 @@
 import { Play } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import PageHeroSlider from "@/components/PageHeroSlider";
 import { facilityImages } from "@/data/mockData";
+
+const heroImages = [
+  { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&h=900&fit=crop", alt: "Medical facility reception" },
+  { src: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=1600&h=900&fit=crop", alt: "Laboratory diagnostics" },
+  { src: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=1600&h=900&fit=crop", alt: "Patient examination room" },
+];
 
 interface AboutProps {
   gallery?: { src: string; alt: string }[];
@@ -9,33 +16,53 @@ interface AboutProps {
 const About = ({ gallery = facilityImages }: AboutProps) => {
   return (
     <Layout>
-      {/* Page Header */}
-      <section className="bg-primary py-[48px]">
-        <div className="container text-center">
-          <h1 className="font-heading text-4xl font-bold text-primary-foreground">About Us</h1>
-          <p className="mt-[8px] font-body text-base text-primary-foreground/80 max-w-xl mx-auto">
-            Delivering trusted, GCC-approved medical services in Dhaka.
-          </p>
-        </div>
-      </section>
+      <PageHeroSlider
+        images={heroImages}
+        title="About Us"
+        subtitle="Delivering trusted, GCC-approved medical services in Dhaka."
+      />
 
       {/* Mission */}
       <section className="py-[48px]">
-        <div className="container max-w-3xl text-center">
-          <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Our Mission</h2>
-          <p className="font-body text-base leading-relaxed text-muted-foreground">
-            At Unicare Medical, our mission is to provide accurate, efficient, and compassionate medical screening services that meet international standards. We are committed to helping individuals achieve their dreams of overseas employment through reliable health certification, while maintaining the highest levels of patient care and clinical excellence.
-          </p>
+        <div className="container">
+          <div className="grid grid-cols-1 gap-[32px] lg:grid-cols-2 items-center">
+            <div>
+              <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Our Mission</h2>
+              <p className="font-body text-base leading-relaxed text-muted-foreground">
+                At Unicare Medical, our mission is to provide accurate, efficient, and compassionate medical screening services that meet international standards. We are committed to helping individuals achieve their dreams of overseas employment through reliable health certification, while maintaining the highest levels of patient care and clinical excellence.
+              </p>
+            </div>
+            <div className="rounded-lg overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop"
+                alt="Medical team reviewing patient records"
+                className="w-full h-auto object-cover"
+                loading="lazy"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
       {/* About Center */}
       <section className="bg-muted py-[48px]">
-        <div className="container max-w-3xl text-center">
-          <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Our Center</h2>
-          <p className="font-body text-base leading-relaxed text-muted-foreground">
-            Our diagnostic center is supervised by a team of highly qualified specialist doctors ensuring that every medical report is verified with professional clinical oversight. Our medical panel includes Medical Officers (Male & Female), Radiologists, and Consultant Pathologists — all dedicated to maintaining the highest standards of medical practice.
-          </p>
+        <div className="container">
+          <div className="grid grid-cols-1 gap-[32px] lg:grid-cols-2 items-center">
+            <div className="order-2 lg:order-1 rounded-lg overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1579154204601-01588f351e67?w=600&h=400&fit=crop"
+                alt="Advanced laboratory equipment"
+                className="w-full h-auto object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div className="order-1 lg:order-2">
+              <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Our Center</h2>
+              <p className="font-body text-base leading-relaxed text-muted-foreground">
+                Our diagnostic center is supervised by a team of highly qualified specialist doctors ensuring that every medical report is verified with professional clinical oversight. Our medical panel includes Medical Officers (Male & Female), Radiologists, and Consultant Pathologists — all dedicated to maintaining the highest standards of medical practice.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -47,18 +74,21 @@ const About = ({ gallery = facilityImages }: AboutProps) => {
           </div>
           <div className="grid grid-cols-1 gap-[24px] sm:grid-cols-3">
             <div className="rounded-lg border border-border bg-card p-[24px] text-center">
+              <img src="https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=400&h=250&fit=crop" alt="Precision diagnostics" className="w-full h-[160px] object-cover rounded-lg mb-[16px]" loading="lazy" />
               <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Precision</h3>
               <p className="font-body text-sm text-muted-foreground">
                 Automated systems minimize human error in chemical and biological analysis.
               </p>
             </div>
             <div className="rounded-lg border border-border bg-card p-[24px] text-center">
+              <img src="https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&h=250&fit=crop" alt="Fast processing" className="w-full h-[160px] object-cover rounded-lg mb-[16px]" loading="lazy" />
               <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Speed</h3>
               <p className="font-body text-sm text-muted-foreground">
                 High-throughput analyzers allow us to process thousands of samples daily.
               </p>
             </div>
             <div className="rounded-lg border border-border bg-card p-[24px] text-center">
+              <img src="https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=400&h=250&fit=crop" alt="Reliable results" className="w-full h-[160px] object-cover rounded-lg mb-[16px]" loading="lazy" />
               <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Reliability</h3>
               <p className="font-body text-sm text-muted-foreground">
                 Daily QC/Calibration and regular maintenance for consistency.

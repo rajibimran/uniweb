@@ -7,6 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
+import PageHeroSlider from "@/components/PageHeroSlider";
+
+const heroImages = [
+  { src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1600&h=900&fit=crop", alt: "Medical report analysis" },
+  { src: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=1600&h=900&fit=crop", alt: "Health records management" },
+];
 
 interface ReportResult {
   patientName: string;
@@ -54,11 +60,8 @@ const ReportCheck = () => {
 
     setIsLoading(true);
     try {
-      // Mock API call to Strapi
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      // In production: const res = await fetch(`/api/reports?patientId=${encodeURIComponent(patientId.trim())}&phone=${encodeURIComponent(phoneDigits)}`);
 
-      // Mock response
       if (patientId.trim().toLowerCase() === "notfound") {
         setNotFound(true);
       } else {
@@ -78,19 +81,15 @@ const ReportCheck = () => {
 
   return (
     <Layout>
-      <section className="bg-primary py-[48px]">
-        <div className="container text-center">
-          <h1 className="font-heading text-4xl font-bold text-primary-foreground">Check Your Report</h1>
-          <p className="mt-[8px] font-body text-base text-primary-foreground/80 max-w-xl mx-auto">
-            Enter your Patient ID and registered phone number to access your medical report.
-          </p>
-        </div>
-      </section>
+      <PageHeroSlider
+        images={heroImages}
+        title="Check Your Report"
+        subtitle="Enter your Patient ID and registered phone number to access your medical report."
+      />
 
       <section className="py-[64px]">
         <div className="container flex justify-center">
           <div className="w-full max-w-md">
-            {/* Security Badge */}
             <div className="flex items-center justify-center gap-[8px] mb-[24px]">
               <ShieldCheck className="h-5 w-5 text-accent" />
               <span className="font-body text-xs text-muted-foreground">Secure & Encrypted Connection</span>
@@ -147,7 +146,6 @@ const ReportCheck = () => {
                 </Button>
               </form>
 
-              {/* Not Found */}
               {notFound && (
                 <div className="mt-[24px] flex items-start gap-[12px] rounded-lg border border-destructive/30 bg-destructive/5 p-[16px]">
                   <AlertCircle className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
@@ -160,7 +158,6 @@ const ReportCheck = () => {
                 </div>
               )}
 
-              {/* Report Result */}
               {report && (
                 <div className="mt-[24px] rounded-lg border border-accent/30 bg-accent/5 p-[24px]">
                   <div className="flex items-center gap-[8px] mb-[16px]">
@@ -191,7 +188,7 @@ const ReportCheck = () => {
             </div>
 
             <p className="mt-[16px] text-center font-body text-xs text-muted-foreground">
-              If you experience issues, please call <span className="font-semibold">+880 1XXX-XXXXXX</span> or visit our reception.
+              If you experience issues, please call <span className="font-semibold">+88 02 48316027</span> or visit our reception.
             </p>
           </div>
         </div>

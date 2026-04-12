@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
+import PageHeroSlider from "@/components/PageHeroSlider";
 
 interface ProcessStep {
   icon: React.ElementType;
@@ -92,6 +93,12 @@ const processSteps: ProcessStep[] = [
   },
 ];
 
+const heroImages = [
+  { src: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1600&h=900&fit=crop", alt: "Medical screening process" },
+  { src: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=1600&h=900&fit=crop", alt: "Patient consultation" },
+  { src: "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=1600&h=900&fit=crop", alt: "Laboratory analysis" },
+];
+
 const ScreeningProcess = () => {
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
 
@@ -101,24 +108,29 @@ const ScreeningProcess = () => {
 
   return (
     <Layout>
-      <section className="bg-primary py-[48px]">
-        <div className="container text-center">
-          <h1 className="font-heading text-4xl font-bold text-primary-foreground">Screening Process</h1>
-          <p className="mt-[8px] font-body text-base text-primary-foreground/80 max-w-xl mx-auto">
-            Your step-by-step guide to the GCC medical screening journey at Unicare Medical.
-          </p>
-        </div>
-      </section>
+      <PageHeroSlider
+        images={heroImages}
+        title="Screening Process"
+        subtitle="Your step-by-step guide to the GCC medical screening journey at Unicare Medical."
+      />
 
       <section className="py-[48px]">
         <div className="container max-w-3xl">
           {/* Download Checklist */}
           <div className="mb-[48px] rounded-lg border border-border bg-card p-[24px] flex flex-col sm:flex-row items-center justify-between gap-[16px]">
-            <div>
-              <h2 className="font-heading text-lg font-bold text-foreground">Preparation Checklist</h2>
-              <p className="mt-[4px] font-body text-sm text-muted-foreground">
-                Download our complete preparation guide before your visit.
-              </p>
+            <div className="flex items-center gap-[16px]">
+              <img
+                src="https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=120&h=120&fit=crop"
+                alt="Preparation checklist"
+                className="h-[80px] w-[80px] rounded-lg object-cover hidden sm:block"
+                loading="lazy"
+              />
+              <div>
+                <h2 className="font-heading text-lg font-bold text-foreground">Preparation Checklist</h2>
+                <p className="mt-[4px] font-body text-sm text-muted-foreground">
+                  Download our complete preparation guide before your visit.
+                </p>
+              </div>
             </div>
             <Button className="h-[48px] min-w-[220px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-sm font-semibold text-accent-foreground hover:bg-accent/90 shrink-0">
               <Download className="mr-[8px] h-5 w-5" />
@@ -143,7 +155,6 @@ const ScreeningProcess = () => {
 
               return (
                 <div key={i} className="relative flex gap-[24px]">
-                  {/* Vertical line & icon */}
                   <div className="flex flex-col items-center">
                     <button
                       onClick={() => toggleStep(i)}
@@ -162,7 +173,6 @@ const ScreeningProcess = () => {
                     )}
                   </div>
 
-                  {/* Content */}
                   <div className={cn("pb-[32px] flex-1", isLast && "pb-0")}>
                     <button
                       onClick={() => toggleStep(i)}
