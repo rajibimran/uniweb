@@ -3,13 +3,6 @@ import { Menu, Phone, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 import { navItems, type NavItem } from "@/data/mockData";
 
 interface HeaderProps {
@@ -49,42 +42,40 @@ const Header = ({ items = navItems }: HeaderProps) => {
 
         {/* Desktop Nav */}
         <div className="hidden items-center gap-[8px] lg:flex">
-          <NavigationMenu>
-            <NavigationMenuList className="gap-0">
+          <nav className="flex items-center gap-0">
               {items.map((item) =>
                 item.children ? (
-                  <NavigationMenuItem key={item.label}>
-                    <NavigationMenuTrigger className="font-body text-[13px] font-medium text-foreground bg-transparent hover:bg-muted hover:text-primary data-[state=open]:bg-muted h-9 px-3">
+                  <div key={item.label} className="relative group">
+                    <button className="font-body text-[13px] font-medium text-foreground hover:text-primary px-3 py-2 inline-flex items-center whitespace-nowrap gap-1">
                       {item.label}
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid w-[200px] gap-[2px] p-[8px]">
+                      <ChevronDown className="h-3 w-3 transition-transform group-hover:rotate-180" />
+                    </button>
+                    <div className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-0 top-full pt-1 z-50">
+                      <ul className="bg-card border border-border rounded-[4px] shadow-lg w-[180px] py-[6px]">
                         {item.children.map((child) => (
                           <li key={child.label}>
                             <Link
                               to={child.href}
-                              className="block rounded-[4px] px-[10px] py-[6px] font-body text-[13px] font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
+                              className="block px-[12px] py-[6px] font-body text-[13px] font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                             >
                               {child.label}
                             </Link>
                           </li>
                         ))}
                       </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
+                    </div>
+                  </div>
                 ) : (
-                  <NavigationMenuItem key={item.label}>
-                    <Link
-                      to={item.href}
-                      className="font-body text-[13px] font-medium text-foreground transition-colors hover:text-primary px-3 py-2 inline-flex items-center whitespace-nowrap"
-                    >
-                      {item.label}
-                    </Link>
-                  </NavigationMenuItem>
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    className="font-body text-[13px] font-medium text-foreground transition-colors hover:text-primary px-3 py-2 inline-flex items-center whitespace-nowrap"
+                  >
+                    {item.label}
+                  </Link>
                 )
               )}
-            </NavigationMenuList>
-          </NavigationMenu>
+          </nav>
 
           <Link
             to="/reports"

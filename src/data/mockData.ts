@@ -91,7 +91,6 @@ export const navItems: NavItem[] = [
     children: [
       { label: "Fitness Criteria", href: "/fitness" },
       { label: "Equipment", href: "/equipment" },
-      { label: "Screening", href: "/screening" },
     ],
   },
   { label: "News", href: "/news" },
