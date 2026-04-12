@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 import WhatsAppFAB from "./WhatsAppFAB";
+import BackToTop from "./BackToTop";
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,10 +11,14 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="flex min-h-screen flex-col">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-0 focus:left-0 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:px-[16px] focus:py-[8px] focus:font-heading focus:text-sm focus:font-semibold">
+        Skip to main content
+      </a>
       <Header />
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">{children}</main>
       <Footer />
       <WhatsAppFAB />
+      <BackToTop />
     </div>
   );
 };
