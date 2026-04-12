@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import gccHeroBg from "@/assets/gcc-workers-hero.jpg";
 
 interface GCCCountry {
   name: string;
@@ -20,15 +21,47 @@ const GCCCountriesSection = () => {
   return (
     <section className="py-[48px]">
       <div className="container">
-        <div className="text-center mb-[32px]">
-          <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
-            GAMCA Medical Centers in Bangladesh
-          </h2>
-          <p className="mt-[8px] font-body text-sm text-muted-foreground">
-            GCC-approved medical screening for the following countries
-          </p>
+        {/* Hero banner with workers + flags */}
+        <div className="relative mb-[40px] overflow-hidden rounded-xl">
+          <img
+            src={gccHeroBg}
+            alt="Bangladeshi workers successfully employed in GCC countries with country flags"
+            className="h-[320px] w-full object-cover sm:h-[360px] lg:h-[400px]"
+            loading="lazy"
+            width={1920}
+            height={640}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/40 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-[24px] sm:p-[32px]">
+            <h2 className="font-heading text-2xl font-bold text-white sm:text-3xl lg:text-4xl">
+              GAMCA Medical Centers in Bangladesh
+            </h2>
+            <p className="mt-[8px] max-w-xl font-body text-sm text-white/90 sm:text-base">
+              GCC-approved medical screening for overseas employment — trusted by thousands of Bangladeshi workers
+            </p>
+            {/* Flag strip */}
+            <div className="mt-[16px] flex flex-wrap gap-[12px]">
+              {countries.map((country) => (
+                <div
+                  key={country.name}
+                  className="group/flag flex items-center gap-[6px] rounded-full bg-white/20 px-[12px] py-[6px] backdrop-blur-sm transition-all duration-300 hover:bg-white/40 hover:scale-105"
+                >
+                  <img
+                    src={country.flag}
+                    alt={`${country.name} flag`}
+                    className="h-[20px] w-[28px] rounded-sm object-cover"
+                    loading="lazy"
+                  />
+                  <span className="font-heading text-xs font-semibold text-white">
+                    {country.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
+        {/* Country cards grid */}
         <div className="grid grid-cols-2 gap-[16px] sm:grid-cols-3 lg:grid-cols-4 max-w-4xl mx-auto">
           {countries.map((country) => (
             <div
