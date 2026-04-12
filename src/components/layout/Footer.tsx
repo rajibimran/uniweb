@@ -19,7 +19,13 @@ const Footer = ({
         <div className="grid grid-cols-1 gap-[32px] sm:grid-cols-2 lg:grid-cols-4">
           {/* Clinic Info */}
           <div>
-            <h3 className="font-heading text-lg font-bold mb-[16px]">Unicare Medical</h3>
+            <div className="flex items-center gap-[8px] mb-[16px]">
+              <img
+                src="https://unicaremedicalbd.co/assets/img/logo.png"
+                alt="Unicare Medical Services Logo"
+                className="h-[36px] w-auto brightness-0 invert"
+              />
+            </div>
             <p className="font-body text-sm leading-relaxed text-background/80 mb-[16px]">
               GCC approved medical center providing comprehensive health screening and certification services in Dhaka, Bangladesh.
             </p>
@@ -28,13 +34,13 @@ const Footer = ({
                 <Phone className="h-4 w-4 shrink-0" />
                 <span>+88 02 48316027</span>
               </a>
-              <a href="mailto:info@unicaremedical.com" className="flex items-center gap-[8px] text-sm text-background/80 hover:text-background">
+              <a href="mailto:unicaremedicalbd@gmail.com" className="flex items-center gap-[8px] text-sm text-background/80 hover:text-background">
                 <Mail className="h-4 w-4 shrink-0" />
-                <span>info@unicaremedical.com</span>
+                <span>unicaremedicalbd@gmail.com</span>
               </a>
               <div className="flex items-center gap-[8px] text-sm text-background/80">
                 <MapPin className="h-4 w-4 shrink-0" />
-                <span>Dhaka, Bangladesh</span>
+                <span>13/1, New Eskaton Road (2nd Floor), Moghbazar, Dhaka</span>
               </div>
               <div className="flex items-center gap-[8px] text-sm text-background/80">
                 <Clock className="h-4 w-4 shrink-0" />
@@ -102,7 +108,7 @@ const Footer = ({
         {/* Copyright */}
         <div className="mt-[24px] border-t border-background/20 pt-[16px] text-center">
           <p className="font-body text-xs text-background/50">
-            © {new Date().getFullYear()} Unicare Medical, Dhaka. All rights reserved.
+            © {new Date().getFullYear()} Unicare Medical Services, Dhaka. All rights reserved.
           </p>
         </div>
       </div>
