@@ -86,6 +86,7 @@ export const navItems: NavItem[] = [
   { label: "Services", href: "/services" },
   { label: "Fitness Criteria", href: "/fitness" },
   { label: "Medical Equipment", href: "/equipment" },
+  { label: "News & Updates", href: "/news" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -465,6 +466,7 @@ export const footerQuickLinks: FooterLink[] = [
   { label: "Our Services", href: "/services" },
   { label: "Fitness Criteria", href: "/fitness" },
   { label: "Report Search", href: "/reports" },
+  { label: "News & Updates", href: "/news" },
   { label: "Contact", href: "/contact" },
 ];
 
