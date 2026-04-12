@@ -48,22 +48,22 @@ const Header = ({ items = navItems }: HeaderProps) => {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden items-center gap-[16px] lg:flex">
+        <div className="hidden items-center gap-[8px] lg:flex">
           <NavigationMenu>
-            <NavigationMenuList className="gap-[4px]">
+            <NavigationMenuList className="gap-0">
               {items.map((item) =>
                 item.children ? (
                   <NavigationMenuItem key={item.label}>
-                    <NavigationMenuTrigger className="font-body text-sm font-medium text-foreground bg-transparent hover:bg-muted hover:text-primary data-[state=open]:bg-muted">
+                    <NavigationMenuTrigger className="font-body text-[13px] font-medium text-foreground bg-transparent hover:bg-muted hover:text-primary data-[state=open]:bg-muted h-9 px-3">
                       {item.label}
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
-                      <ul className="grid w-[220px] gap-[4px] p-[12px]">
+                      <ul className="grid w-[200px] gap-[2px] p-[8px]">
                         {item.children.map((child) => (
                           <li key={child.label}>
                             <Link
                               to={child.href}
-                              className="block rounded-[4px] px-[12px] py-[8px] font-body text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
+                              className="block rounded-[4px] px-[10px] py-[6px] font-body text-[13px] font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
                             >
                               {child.label}
                             </Link>
@@ -76,7 +76,7 @@ const Header = ({ items = navItems }: HeaderProps) => {
                   <NavigationMenuItem key={item.label}>
                     <Link
                       to={item.href}
-                      className="font-body text-sm font-medium text-foreground transition-colors hover:text-primary px-[12px] py-[8px] inline-flex items-center"
+                      className="font-body text-[13px] font-medium text-foreground transition-colors hover:text-primary px-3 py-2 inline-flex items-center whitespace-nowrap"
                     >
                       {item.label}
                     </Link>
@@ -88,9 +88,9 @@ const Header = ({ items = navItems }: HeaderProps) => {
 
           <Link
             to="/reports"
-            className="font-body text-sm font-medium text-primary transition-colors hover:text-primary/80"
+            className="font-body text-[13px] font-medium text-primary transition-colors hover:text-primary/80 whitespace-nowrap"
           >
-            Report Search
+            Reports
           </Link>
           <Link to="/book">
             <Button className="h-[44px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-sm font-semibold text-accent-foreground hover:bg-accent/90">

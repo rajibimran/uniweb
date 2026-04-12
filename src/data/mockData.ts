@@ -83,18 +83,18 @@ export interface ServicePackage {
 // Navigation — per reference doc (added Report Search, Equipment, Fitness Criteria)
 export const navItems: NavItem[] = [
   { label: "Home", href: "/" },
-  { label: "About Us", href: "/about" },
+  { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
   {
     label: "Resources",
     href: "#",
     children: [
       { label: "Fitness Criteria", href: "/fitness" },
-      { label: "Medical Equipment", href: "/equipment" },
-      { label: "Screening Process", href: "/screening" },
+      { label: "Equipment", href: "/equipment" },
+      { label: "Screening", href: "/screening" },
     ],
   },
-  { label: "News & Updates", href: "/news" },
+  { label: "News", href: "/news" },
   { label: "Contact", href: "/contact" },
 ];
 
