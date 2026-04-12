@@ -4,7 +4,7 @@ import HeroSection from "@/components/home/HeroSection";
 import ServicesSection from "@/components/home/ServicesSection";
 import GCCCountriesSection from "@/components/home/GCCCountriesSection";
 import TrustSection from "@/components/home/TrustSection";
-import TestimonialSection from "@/components/home/TestimonialSection";
+import CountryGuidelinesSection from "@/components/home/CountryGuidelinesSection";
 import QuickContactSection from "@/components/home/QuickContactSection";
 
 const Index = () => {
