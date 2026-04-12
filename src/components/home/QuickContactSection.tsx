@@ -22,53 +22,53 @@ const QuickContactSection = () => {
   };
 
   return (
-    <section className="bg-muted py-[48px]">
-      <div className="container">
-        <div className="text-center mb-[32px]">
-          <h2 className="font-heading text-2xl font-bold text-foreground">Get In Touch</h2>
-          <p className="mt-[8px] font-body text-sm text-muted-foreground">
+    <section className="bg-muted py-8 sm:py-[48px]">
+      <div className="container px-4 sm:px-6">
+        <div className="text-center mb-6 sm:mb-[32px]">
+          <h2 className="font-heading text-xl font-bold text-foreground sm:text-2xl">Get In Touch</h2>
+          <p className="mt-1 font-body text-xs text-muted-foreground sm:mt-[8px] sm:text-sm">
             Have questions? Reach out to us directly or send a quick message.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-[32px] lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 sm:gap-[32px]">
           {/* Contact Info + Map */}
-          <div className="space-y-[24px]">
-            <div className="rounded-lg border border-border bg-card p-[24px] space-y-[16px]">
-              <div className="flex items-center gap-[12px]">
-                <div className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Phone className="h-5 w-5 text-primary" />
+          <div className="space-y-4 sm:space-y-[24px]">
+            <div className="rounded-lg border border-border bg-card p-4 space-y-3 sm:p-[24px] sm:space-y-[16px]">
+              <div className="flex items-center gap-3 sm:gap-[12px]">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 sm:h-[40px] sm:w-[40px]">
+                  <Phone className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
                 </div>
                 <div>
-                  <p className="font-heading text-sm font-semibold text-foreground">Phone</p>
-                  <a href="tel:+880248316027" className="font-body text-sm text-muted-foreground hover:text-primary">+88 02 48316027</a>
+                  <p className="font-heading text-xs font-semibold text-foreground sm:text-sm">Phone</p>
+                  <a href="tel:+880248316027" className="font-body text-xs text-muted-foreground hover:text-primary sm:text-sm">+88 02 48316027</a>
                 </div>
               </div>
-              <div className="flex items-center gap-[12px]">
-                <div className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Mail className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3 sm:gap-[12px]">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 sm:h-[40px] sm:w-[40px]">
+                  <Mail className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
                 </div>
                 <div>
-                  <p className="font-heading text-sm font-semibold text-foreground">Email</p>
-                  <a href="mailto:unicaremedicalbd@gmail.com" className="font-body text-sm text-muted-foreground hover:text-primary">unicaremedicalbd@gmail.com</a>
+                  <p className="font-heading text-xs font-semibold text-foreground sm:text-sm">Email</p>
+                  <a href="mailto:unicaremedicalbd@gmail.com" className="font-body text-xs text-muted-foreground hover:text-primary sm:text-sm">unicaremedicalbd@gmail.com</a>
                 </div>
               </div>
-              <div className="flex items-center gap-[12px]">
-                <div className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <MapPin className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3 sm:gap-[12px]">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 sm:h-[40px] sm:w-[40px]">
+                  <MapPin className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
                 </div>
                 <div>
-                  <p className="font-heading text-sm font-semibold text-foreground">Address</p>
-                  <p className="font-body text-sm text-muted-foreground">13/1, New Eskaton Road (2nd Floor), Moghbazar, Dhaka</p>
+                  <p className="font-heading text-xs font-semibold text-foreground sm:text-sm">Address</p>
+                  <p className="font-body text-xs text-muted-foreground sm:text-sm">13/1, New Eskaton Road (2nd Floor), Moghbazar, Dhaka</p>
                 </div>
               </div>
-              <div className="flex items-center gap-[12px]">
-                <div className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Clock className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3 sm:gap-[12px]">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 sm:h-[40px] sm:w-[40px]">
+                  <Clock className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
                 </div>
                 <div>
-                  <p className="font-heading text-sm font-semibold text-foreground">Working Hours</p>
-                  <p className="font-body text-sm text-muted-foreground">Sat–Thu: 8:00 AM – 8:00 PM</p>
+                  <p className="font-heading text-xs font-semibold text-foreground sm:text-sm">Working Hours</p>
+                  <p className="font-body text-xs text-muted-foreground sm:text-sm">Sat–Thu: 8:00 AM – 8:00 PM</p>
                 </div>
               </div>
             </div>
@@ -87,34 +87,34 @@ const QuickContactSection = () => {
           </div>
 
           {/* Quick Form */}
-          <div className="rounded-lg border border-border bg-card p-[24px]">
+          <div className="rounded-lg border border-border bg-card p-4 sm:p-[24px]">
             {submitted ? (
               <div className="flex h-full items-center justify-center text-center">
                 <div>
-                  <div className="mx-auto mb-[16px] flex h-[64px] w-[64px] items-center justify-center rounded-full bg-accent/10">
-                    <Send className="h-[28px] w-[28px] text-accent" />
+                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 sm:mb-[16px] sm:h-[64px] sm:w-[64px]">
+                    <Send className="h-6 w-6 text-accent sm:h-[28px] sm:w-[28px]" />
                   </div>
-                  <h3 className="font-heading text-lg font-bold text-foreground">Message Sent!</h3>
-                  <p className="mt-[8px] font-body text-sm text-muted-foreground">We'll get back to you within 24 hours.</p>
+                  <h3 className="font-heading text-base font-bold text-foreground sm:text-lg">Message Sent!</h3>
+                  <p className="mt-1 font-body text-xs text-muted-foreground sm:mt-[8px] sm:text-sm">We'll get back to you within 24 hours.</p>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-[16px]">
-                <h3 className="font-heading text-lg font-bold text-foreground">Send a Message</h3>
+              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-[16px]">
+                <h3 className="font-heading text-base font-bold text-foreground sm:text-lg">Send a Message</h3>
                 <div>
-                  <Label htmlFor="qc-name" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">Name *</Label>
-                  <Input id="qc-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className="h-[44px] font-body text-sm" maxLength={100} required />
+                  <Label htmlFor="qc-name" className="font-heading text-xs font-semibold text-foreground mb-1 block sm:text-sm sm:mb-[4px]">Name *</Label>
+                  <Input id="qc-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className="h-10 font-body text-sm sm:h-[44px]" maxLength={100} required />
                 </div>
                 <div>
-                  <Label htmlFor="qc-email" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">Email *</Label>
-                  <Input id="qc-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className="h-[44px] font-body text-sm" maxLength={255} required />
+                  <Label htmlFor="qc-email" className="font-heading text-xs font-semibold text-foreground mb-1 block sm:text-sm sm:mb-[4px]">Email *</Label>
+                  <Input id="qc-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className="h-10 font-body text-sm sm:h-[44px]" maxLength={255} required />
                 </div>
                 <div>
-                  <Label htmlFor="qc-message" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">Message *</Label>
-                  <Textarea id="qc-message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="How can we help you?" className="min-h-[120px] font-body text-sm" maxLength={1000} required />
+                  <Label htmlFor="qc-message" className="font-heading text-xs font-semibold text-foreground mb-1 block sm:text-sm sm:mb-[4px]">Message *</Label>
+                  <Textarea id="qc-message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="How can we help you?" className="min-h-[100px] font-body text-sm sm:min-h-[120px]" maxLength={1000} required />
                 </div>
-                <Button type="submit" disabled={isSubmitting} className="w-full h-[48px] rounded-[4px] bg-primary px-[24px] py-[12px] font-heading text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-                  {isSubmitting ? <><Loader2 className="mr-[8px] h-4 w-4 animate-spin" />Sending...</> : <>Send Message</>}
+                <Button type="submit" disabled={isSubmitting} className="w-full h-[44px] rounded-[4px] bg-primary px-[24px] py-[12px] font-heading text-sm font-semibold text-primary-foreground hover:bg-primary/90 sm:h-[48px]">
+                  {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</> : <>Send Message</>}
                 </Button>
               </form>
             )}
