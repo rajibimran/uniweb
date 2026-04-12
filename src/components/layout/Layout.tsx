@@ -3,6 +3,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import WhatsAppFAB from "./WhatsAppFAB";
 import BackToTop from "./BackToTop";
+import MobileStickyBar from "./MobileStickyBar";
 
 interface LayoutProps {
   children: ReactNode;
@@ -15,10 +16,11 @@ const Layout = ({ children }: LayoutProps) => {
         Skip to main content
       </a>
       <Header />
-      <main id="main-content" className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1 pb-14 lg:pb-0">{children}</main>
       <Footer />
       <WhatsAppFAB />
       <BackToTop />
+      <MobileStickyBar />
     </div>
   );
 };

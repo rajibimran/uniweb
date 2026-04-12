@@ -19,16 +19,16 @@ interface ServicesSectionProps {
 
 const ServicesSection = ({ items = services }: ServicesSectionProps) => {
   return (
-    <section className="py-[64px]">
-      <div className="container">
-        <div className="text-center mb-[48px]">
-          <h2 className="font-heading text-3xl font-bold text-foreground">Our Services</h2>
-          <p className="mt-[8px] font-body text-base text-muted-foreground max-w-xl mx-auto">
+    <section className="py-10 sm:py-[64px]">
+      <div className="container px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-[48px]">
+          <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">Our Services</h2>
+          <p className="mt-2 font-body text-sm text-muted-foreground max-w-xl mx-auto sm:text-base sm:mt-[8px]">
             Comprehensive GCC-approved medical screening services for overseas employment certification.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-[32px] sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-[32px] lg:grid-cols-4">
           {items.map((service) => {
             const Icon = iconMap[service.icon] || Stethoscope;
             return (
@@ -40,18 +40,20 @@ const ServicesSection = ({ items = services }: ServicesSectionProps) => {
                 <img
                   src={serviceImages[service.title] || "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&h=300&fit=crop"}
                   alt={service.title}
-                  className="w-full h-[180px] object-cover"
+                  className="w-full h-[160px] object-cover sm:h-[180px]"
                   loading="lazy"
+                  width={500}
+                  height={300}
                 />
-                <div className="p-[24px]">
-                  <div className="mb-[12px] flex h-[40px] w-[40px] items-center justify-center rounded-lg bg-primary/10">
-                    <Icon className="h-[20px] w-[20px] text-primary" />
+                <div className="p-4 sm:p-[24px]">
+                  <div className="mb-2 flex h-[36px] w-[36px] items-center justify-center rounded-lg bg-primary/10 sm:mb-[12px] sm:h-[40px] sm:w-[40px]">
+                    <Icon className="h-[18px] w-[18px] text-primary sm:h-[20px] sm:w-[20px]" />
                   </div>
-                  <h3 className="font-heading text-lg font-semibold text-foreground">{service.title}</h3>
-                  <p className="mt-[8px] font-body text-sm leading-relaxed text-muted-foreground">
+                  <h3 className="font-heading text-base font-semibold text-foreground sm:text-lg">{service.title}</h3>
+                  <p className="mt-1 font-body text-xs leading-relaxed text-muted-foreground sm:mt-[8px] sm:text-sm">
                     {service.description}
                   </p>
-                  <span className="mt-[16px] inline-block font-heading text-sm font-semibold text-primary group-hover:text-primary/80">
+                  <span className="mt-3 inline-block font-heading text-sm font-semibold text-primary group-hover:text-primary/80 sm:mt-[16px]">
                     Learn More →
                   </span>
                 </div>
