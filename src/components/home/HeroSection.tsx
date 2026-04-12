@@ -14,16 +14,16 @@ const HeroSection = () => {
       images={heroImages}
       title="GCC Approved Medical Center"
       subtitle="Trusted for comprehensive health screening, medical checkups, and overseas employment certification in Dhaka, Bangladesh."
-      height="min-h-[560px]"
+      height="min-h-[420px] sm:min-h-[560px]"
     >
-      <div className="mt-[32px] flex flex-col items-center justify-center gap-[16px] sm:flex-row">
-        <Link to="/book">
-          <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">
+      <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:mt-[32px] sm:flex-row sm:gap-[16px]">
+        <Link to="/book" className="w-full sm:w-auto">
+          <Button className="h-[48px] w-full min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90 sm:w-auto">
             Book Appointment
           </Button>
         </Link>
-        <Link to="/reports">
-          <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-secondary px-[24px] py-[12px] font-heading text-base font-semibold text-secondary-foreground shadow-md hover:bg-secondary/90">
+        <Link to="/reports" className="w-full sm:w-auto">
+          <Button className="h-[48px] w-full min-w-[200px] rounded-[4px] bg-secondary px-[24px] py-[12px] font-heading text-base font-semibold text-secondary-foreground shadow-md hover:bg-secondary/90 sm:w-auto">
             Check Report
           </Button>
         </Link>
