@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
+import PageHeroSlider from "@/components/PageHeroSlider";
 
 const iconMap: Record<string, React.ElementType> = {
   Stethoscope, ScanLine, TestTubes, Syringe,
@@ -30,6 +31,11 @@ const timeSlots = [
   "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
   "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
   "04:00 PM", "04:30 PM", "05:00 PM",
+];
+
+const heroImages = [
+  { src: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1600&h=900&fit=crop", alt: "Booking an appointment" },
+  { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&h=900&fit=crop", alt: "Medical center reception" },
 ];
 
 interface FormErrors {
@@ -152,14 +158,11 @@ const BookAppointment = () => {
 
   return (
     <Layout>
-      <section className="bg-primary py-[48px]">
-        <div className="container text-center">
-          <h1 className="font-heading text-4xl font-bold text-primary-foreground">Book Appointment</h1>
-          <p className="mt-[8px] font-body text-base text-primary-foreground/80 max-w-xl mx-auto">
-            Schedule your medical examination in three simple steps.
-          </p>
-        </div>
-      </section>
+      <PageHeroSlider
+        images={heroImages}
+        title="Book Appointment"
+        subtitle="Schedule your medical examination in three simple steps."
+      />
 
       <section className="py-[48px]">
         <div className="container flex justify-center">
