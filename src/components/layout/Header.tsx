@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { Menu, Phone } from "lucide-react";
+import { Menu, Phone, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 import { navItems, type NavItem } from "@/data/mockData";
 
 interface HeaderProps {
@@ -11,6 +18,11 @@ interface HeaderProps {
 
 const Header = ({ items = navItems }: HeaderProps) => {
   const [open, setOpen] = useState(false);
+
+  // Flatten items for mobile nav
+  const flatItems = items.flatMap((item) =>
+    item.children ? item.children : [item]
+  );
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -36,16 +48,44 @@ const Header = ({ items = navItems }: HeaderProps) => {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden items-center gap-[24px] lg:flex">
-          {items.map((item) => (
-            <Link
-              key={item.label}
-              to={item.href}
-              className="font-body text-sm font-medium text-foreground transition-colors hover:text-primary"
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div className="hidden items-center gap-[16px] lg:flex">
+          <NavigationMenu>
+            <NavigationMenuList className="gap-[4px]">
+              {items.map((item) =>
+                item.children ? (
+                  <NavigationMenuItem key={item.label}>
+                    <NavigationMenuTrigger className="font-body text-sm font-medium text-foreground bg-transparent hover:bg-muted hover:text-primary data-[state=open]:bg-muted">
+                      {item.label}
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="grid w-[220px] gap-[4px] p-[12px]">
+                        {item.children.map((child) => (
+                          <li key={child.label}>
+                            <Link
+                              to={child.href}
+                              className="block rounded-[4px] px-[12px] py-[8px] font-body text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                ) : (
+                  <NavigationMenuItem key={item.label}>
+                    <Link
+                      to={item.href}
+                      className="font-body text-sm font-medium text-foreground transition-colors hover:text-primary px-[12px] py-[8px] inline-flex items-center"
+                    >
+                      {item.label}
+                    </Link>
+                  </NavigationMenuItem>
+                )
+              )}
+            </NavigationMenuList>
+          </NavigationMenu>
+
           <Link
             to="/reports"
             className="font-body text-sm font-medium text-primary transition-colors hover:text-primary/80"
@@ -57,7 +97,7 @@ const Header = ({ items = navItems }: HeaderProps) => {
               Book Appointment
             </Button>
           </Link>
-        </nav>
+        </div>
 
         {/* Mobile Nav */}
         <Sheet open={open} onOpenChange={setOpen}>
@@ -70,7 +110,7 @@ const Header = ({ items = navItems }: HeaderProps) => {
           <SheetContent side="right" className="w-[280px]">
             <SheetTitle className="font-heading text-lg font-bold">Menu</SheetTitle>
             <nav className="mt-[32px] flex flex-col gap-[24px]">
-              {items.map((item) => (
+              {flatItems.map((item) => (
                 <Link
                   key={item.label}
                   to={item.href}
