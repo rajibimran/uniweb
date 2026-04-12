@@ -21,6 +21,10 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
   const { slug } = useParams<{ slug: string }>();
   const service = serviceProp || (slug ? serviceDetails[slug] : undefined);
 
+  useEffect(() => {
+    if (service) document.title = `${service.title} — Unicare Medical, Dhaka`;
+  }, [service]);
+
   if (!service) {
     return (
       <Layout>
@@ -41,11 +45,6 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
 
   const Icon = iconMap[service.icon] || Stethoscope;
   const relatedServices = service.relatedSlugs.map((s) => serviceDetails[s]).filter(Boolean);
-
-  useEffect(() => { document.title = `${service.title} — Unicare Medical, Dhaka`; }, [service.title]);
-  const relatedServices = service.relatedSlugs
-    .map((s) => serviceDetails[s])
-    .filter(Boolean);
 
   return (
     <Layout>
