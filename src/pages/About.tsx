@@ -1,13 +1,12 @@
 import { Play } from "lucide-react";
 import Layout from "@/components/layout/Layout";
-import { teamMembers, facilityImages, type TeamMember } from "@/data/mockData";
+import { facilityImages } from "@/data/mockData";
 
 interface AboutProps {
-  team?: TeamMember[];
   gallery?: { src: string; alt: string }[];
 }
 
-const About = ({ team = teamMembers, gallery = facilityImages }: AboutProps) => {
+const About = ({ gallery = facilityImages }: AboutProps) => {
   return (
     <Layout>
       {/* Page Header */}
@@ -15,7 +14,7 @@ const About = ({ team = teamMembers, gallery = facilityImages }: AboutProps) => 
         <div className="container text-center">
           <h1 className="font-heading text-4xl font-bold text-primary-foreground">About Us</h1>
           <p className="mt-[8px] font-body text-base text-primary-foreground/80 max-w-xl mx-auto">
-            Delivering trusted, GCC-approved medical services in Dhaka since 2009.
+            Delivering trusted, GCC-approved medical services in Dhaka.
           </p>
         </div>
       </section>
@@ -30,44 +29,55 @@ const About = ({ team = teamMembers, gallery = facilityImages }: AboutProps) => 
         </div>
       </section>
 
-      {/* Team */}
+      {/* About Center */}
       <section className="bg-muted py-[48px]">
+        <div className="container max-w-3xl text-center">
+          <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Our Center</h2>
+          <p className="font-body text-base leading-relaxed text-muted-foreground">
+            Our diagnostic center is supervised by a team of highly qualified specialist doctors ensuring that every medical report is verified with professional clinical oversight. Our medical panel includes Medical Officers (Male & Female), Radiologists, and Consultant Pathologists — all dedicated to maintaining the highest standards of medical practice.
+          </p>
+        </div>
+      </section>
+
+      {/* Key Values */}
+      <section className="py-[48px]">
         <div className="container">
           <div className="text-center mb-[32px]">
-            <h2 className="font-heading text-2xl font-bold text-foreground">Meet the Team</h2>
-            <p className="mt-[8px] font-body text-sm text-muted-foreground">
-              Experienced professionals dedicated to your health and wellbeing.
-            </p>
+            <h2 className="font-heading text-2xl font-bold text-foreground">Why Choose Us</h2>
           </div>
-          <div className="grid grid-cols-1 gap-[32px] sm:grid-cols-2 lg:grid-cols-3">
-            {team.map((member) => (
-              <div key={member.name} className="rounded-lg border border-border bg-card p-[24px] text-center">
-                <img
-                  src={member.photo}
-                  alt={member.name}
-                  className="mx-auto h-[200px] w-[200px] rounded-full object-cover"
-                  loading="lazy"
-                />
-                <h3 className="mt-[16px] font-heading text-lg font-semibold text-foreground">{member.name}</h3>
-                <p className="mt-[4px] font-heading text-sm font-medium text-primary">{member.role}</p>
-                <p className="mt-[8px] font-body text-xs text-muted-foreground">{member.credentials}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 gap-[24px] sm:grid-cols-3">
+            <div className="rounded-lg border border-border bg-card p-[24px] text-center">
+              <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Precision</h3>
+              <p className="font-body text-sm text-muted-foreground">
+                Automated systems minimize human error in chemical and biological analysis.
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-[24px] text-center">
+              <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Speed</h3>
+              <p className="font-body text-sm text-muted-foreground">
+                High-throughput analyzers allow us to process thousands of samples daily.
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-[24px] text-center">
+              <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Reliability</h3>
+              <p className="font-body text-sm text-muted-foreground">
+                Daily QC/Calibration and regular maintenance for consistency.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Facility Gallery */}
-      <section className="py-[48px]">
+      <section className="bg-muted py-[48px]">
         <div className="container">
           <div className="text-center mb-[32px]">
-            <h2 className="font-heading text-2xl font-bold text-foreground">Our Facility</h2>
+            <h2 className="font-heading text-2xl font-bold text-foreground">Facilities & Gallery</h2>
             <p className="mt-[8px] font-body text-sm text-muted-foreground">
-              State-of-the-art medical infrastructure for accurate diagnostics.
+              Our center is designed to provide a clean, organized, and patient-friendly environment.
             </p>
           </div>
 
-          {/* Masonry Grid */}
           <div className="columns-1 gap-[16px] sm:columns-2 lg:columns-3">
             {gallery.map((img, i) => (
               <div key={i} className="mb-[16px] break-inside-avoid overflow-hidden rounded-lg">
@@ -84,7 +94,7 @@ const About = ({ team = teamMembers, gallery = facilityImages }: AboutProps) => 
           {/* Virtual Tour Placeholder */}
           <div className="mt-[32px]">
             <h3 className="font-heading text-xl font-bold text-foreground mb-[16px] text-center">Virtual Tour</h3>
-            <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-lg bg-foreground/5 border border-border flex items-center justify-center">
+            <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-lg bg-card border border-border flex items-center justify-center">
               <div className="text-center">
                 <div className="mx-auto flex h-[64px] w-[64px] items-center justify-center rounded-full bg-primary/10 mb-[16px]">
                   <Play className="h-[32px] w-[32px] text-primary" />

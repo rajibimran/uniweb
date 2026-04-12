@@ -1,4 +1,5 @@
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
 import { footerQuickLinks, footerServices, certificationLogos, type FooterLink } from "@/data/mockData";
 
 interface FooterProps {
@@ -23,14 +24,14 @@ const Footer = ({
               GCC approved medical center providing comprehensive health screening and certification services in Dhaka, Bangladesh.
             </p>
             <div className="flex flex-col gap-[8px]">
-              <div className="flex items-center gap-[8px] text-sm text-background/80">
+              <a href="tel:+880248316027" className="flex items-center gap-[8px] text-sm text-background/80 hover:text-background">
                 <Phone className="h-4 w-4 shrink-0" />
-                <span>+880 1XXX-XXXXXX</span>
-              </div>
-              <div className="flex items-center gap-[8px] text-sm text-background/80">
+                <span>+88 02 48316027</span>
+              </a>
+              <a href="mailto:info@unicaremedical.com" className="flex items-center gap-[8px] text-sm text-background/80 hover:text-background">
                 <Mail className="h-4 w-4 shrink-0" />
                 <span>info@unicaremedical.com</span>
-              </div>
+              </a>
               <div className="flex items-center gap-[8px] text-sm text-background/80">
                 <MapPin className="h-4 w-4 shrink-0" />
                 <span>Dhaka, Bangladesh</span>
@@ -42,15 +43,15 @@ const Footer = ({
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Quick Navigation */}
           <div>
-            <h3 className="font-heading text-lg font-bold mb-[16px]">Quick Links</h3>
+            <h3 className="font-heading text-lg font-bold mb-[16px]">Quick Navigation</h3>
             <ul className="flex flex-col gap-[8px]">
               {quickLinks.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="font-body text-sm text-background/80 transition-colors hover:text-background">
+                  <Link to={link.href} className="font-body text-sm text-background/80 transition-colors hover:text-background">
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -62,17 +63,20 @@ const Footer = ({
             <ul className="flex flex-col gap-[8px]">
               {serviceLinks.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="font-body text-sm text-background/80 transition-colors hover:text-background">
+                  <Link to={link.href} className="font-body text-sm text-background/80 transition-colors hover:text-background">
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Map Placeholder */}
+          {/* Help Desk */}
           <div>
-            <h3 className="font-heading text-lg font-bold mb-[16px]">Find Us</h3>
+            <h3 className="font-heading text-lg font-bold mb-[16px]">Help Desk</h3>
+            <p className="font-body text-sm text-background/80 mb-[16px]">
+              Need assistance? Our help desk is available during working hours.
+            </p>
             <div className="aspect-video w-full rounded-lg bg-background/10 flex items-center justify-center text-sm text-background/50">
               <MapPin className="mr-[8px] h-5 w-5" />
               Map Placeholder
@@ -80,7 +84,7 @@ const Footer = ({
           </div>
         </div>
 
-        {/* Certification Logos */}
+        {/* Certifications */}
         <div className="mt-[48px] border-t border-background/20 pt-[24px]">
           <p className="font-body text-xs text-background/60 text-center mb-[16px]">Approved & Certified By</p>
           <div className="flex flex-wrap items-center justify-center gap-[24px]">

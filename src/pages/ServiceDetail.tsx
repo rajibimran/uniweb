@@ -1,14 +1,14 @@
 import { useParams, Link } from "react-router-dom";
 import {
-  Stethoscope, HeartPulse, Syringe, Microscope, Eye, Baby,
-  Download, FileText, CheckCircle, Circle,
+  Stethoscope, ScanLine, TestTubes, Syringe,
+  Download, FileText, CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/layout/Layout";
-import { serviceDetails, services, type ServiceDetail } from "@/data/mockData";
+import { serviceDetails, type ServiceDetail } from "@/data/mockData";
 
 const iconMap: Record<string, React.ElementType> = {
-  Stethoscope, HeartPulse, Syringe, Microscope, Eye, Baby,
+  Stethoscope, ScanLine, TestTubes, Syringe,
 };
 
 interface ServicePageProps {
@@ -46,12 +46,7 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
     <Layout>
       {/* Hero */}
       <section className="relative flex min-h-[320px] items-center overflow-hidden">
-        <img
-          src={service.heroImage}
-          alt={service.title}
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="eager"
-        />
+        <img src={service.heroImage} alt={service.title} className="absolute inset-0 h-full w-full object-cover" loading="eager" />
         <div className="absolute inset-0 bg-foreground/60" />
         <div className="container relative z-10 py-[48px]">
           <span className="inline-block rounded bg-primary/20 px-[12px] py-[4px] font-body text-xs font-medium text-primary-foreground mb-[8px]">
@@ -63,12 +58,24 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
 
       <div className="container py-[48px]">
         <div className="grid grid-cols-1 gap-[32px] lg:grid-cols-3">
-          {/* Main Content — 2 cols */}
           <div className="lg:col-span-2 space-y-[48px]">
             {/* Description */}
             <div>
               <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Overview</h2>
               <p className="font-body text-base leading-relaxed text-muted-foreground">{service.description}</p>
+            </div>
+
+            {/* Tests Included */}
+            <div>
+              <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Tests Included</h2>
+              <ul className="space-y-[12px]">
+                {service.tests.map((t, i) => (
+                  <li key={i} className="flex items-start gap-[12px]">
+                    <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+                    <span className="font-body text-sm text-foreground">{t}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* Benefits */}
@@ -77,14 +84,14 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
               <ul className="space-y-[12px]">
                 {service.benefits.map((b, i) => (
                   <li key={i} className="flex items-start gap-[12px]">
-                    <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+                    <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                     <span className="font-body text-sm text-foreground">{b}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Pricing Table */}
+            {/* Pricing */}
             <div>
               <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Pricing</h2>
               <div className="overflow-x-auto">
@@ -109,13 +116,13 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
               </div>
             </div>
 
-            {/* Preparation Timeline */}
+            {/* Timeline */}
             <div>
               <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Preparation Timeline</h2>
               <div className="relative pl-[32px]">
                 <div className="absolute left-[11px] top-[8px] bottom-[8px] w-[2px] bg-border" />
-                {service.timeline.map((step, i) => (
-                  <div key={i} className="relative mb-[24px] last:mb-0">
+                {service.timeline.map((step) => (
+                  <div key={step.step} className="relative mb-[24px] last:mb-0">
                     <div className="absolute left-[-32px] top-[2px] flex h-[24px] w-[24px] items-center justify-center rounded-full bg-primary text-primary-foreground font-heading text-xs font-bold">
                       {step.step}
                     </div>
@@ -126,7 +133,7 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
               </div>
             </div>
 
-            {/* Required Documents */}
+            {/* Documents */}
             <div>
               <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Required Documents</h2>
               <ul className="space-y-[12px]">
@@ -136,9 +143,7 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
                       <FileText className="h-5 w-5 text-primary" />
                       <span className="font-body text-sm text-foreground">{doc.name}</span>
                       {doc.required && (
-                        <span className="rounded bg-destructive/10 px-[8px] py-[2px] font-body text-xs font-medium text-destructive">
-                          Required
-                        </span>
+                        <span className="rounded bg-destructive/10 px-[8px] py-[2px] font-body text-xs font-medium text-destructive">Required</span>
                       )}
                     </div>
                     <Button variant="ghost" size="icon" className="h-[44px] w-[44px]" aria-label={`Download ${doc.name}`}>
@@ -155,25 +160,24 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
               <p className="mt-[8px] font-body text-sm text-muted-foreground">
                 Book your {service.title.toLowerCase()} appointment today.
               </p>
-              <Button className="mt-[24px] h-[48px] min-w-[220px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">
-                Book This Service
-              </Button>
+              <Link to="/book">
+                <Button className="mt-[24px] h-[48px] min-w-[220px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">
+                  Book This Service
+                </Button>
+              </Link>
             </div>
           </div>
 
           {/* Sidebar */}
           <aside className="space-y-[24px]">
-            <div className="rounded-lg border border-border bg-card p-[24px] sticky top-[88px]">
+            <div className="rounded-lg border border-border bg-card p-[24px] sticky top-[112px]">
               <h3 className="font-heading text-lg font-bold text-foreground mb-[16px]">Related Services</h3>
               <ul className="space-y-[16px]">
                 {relatedServices.map((rs) => {
                   const RSIcon = iconMap[rs.icon] || Stethoscope;
                   return (
                     <li key={rs.slug}>
-                      <Link
-                        to={`/services/${rs.slug}`}
-                        className="flex items-center gap-[12px] rounded-lg p-[12px] transition-colors hover:bg-muted"
-                      >
+                      <Link to={`/services/${rs.slug}`} className="flex items-center gap-[12px] rounded-lg p-[12px] transition-colors hover:bg-muted">
                         <div className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-lg bg-primary/10">
                           <RSIcon className="h-5 w-5 text-primary" />
                         </div>
@@ -186,7 +190,6 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
                   );
                 })}
               </ul>
-
               <div className="mt-[24px] border-t border-border pt-[24px]">
                 <Link to="/services">
                   <Button variant="outline" className="w-full h-[44px] rounded-[4px] font-heading text-sm font-semibold">

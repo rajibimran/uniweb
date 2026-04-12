@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import {
-  Stethoscope, HeartPulse, Syringe, Microscope, Eye, Baby,
-  ChevronRight, ChevronLeft, Loader2, CheckCircle, CalendarIcon, Clock,
+  Stethoscope, ScanLine, TestTubes, Syringe,
+  ChevronRight, ChevronLeft, Loader2, CheckCircle, CalendarIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,16 +16,14 @@ import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
 
 const iconMap: Record<string, React.ElementType> = {
-  Stethoscope, HeartPulse, Syringe, Microscope, Eye, Baby,
+  Stethoscope, ScanLine, TestTubes, Syringe,
 };
 
 const bookingServices = [
-  { id: "general-checkup", icon: "Stethoscope", title: "General Checkup" },
-  { id: "cardiac-screening", icon: "HeartPulse", title: "Cardiac Screening" },
-  { id: "blood-tests", icon: "Syringe", title: "Blood Tests" },
-  { id: "radiology", icon: "Microscope", title: "Radiology" },
-  { id: "eye-testing", icon: "Eye", title: "Eye Testing" },
-  { id: "vaccination", icon: "Baby", title: "Vaccination" },
+  { id: "physical-examination", icon: "Stethoscope", title: "Physical Examination" },
+  { id: "digital-radiology", icon: "ScanLine", title: "Digital Radiology" },
+  { id: "laboratory-tests", icon: "TestTubes", title: "Laboratory Tests" },
+  { id: "vaccination", icon: "Syringe", title: "Vaccination" },
 ];
 
 const timeSlots = [
@@ -87,8 +85,7 @@ const BookAppointment = () => {
   const canProceed = () => {
     if (step === 1) return !!selectedService;
     if (step === 2) return !!selectedDate && !!selectedTime;
-    if (step === 3) return true;
-    return false;
+    return true;
   };
 
   const handleNext = () => {
@@ -102,10 +99,8 @@ const BookAppointment = () => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Mock API call to Strapi
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      // In production: await fetch('/api/appointments', { method: 'POST', body: JSON.stringify({...}) })
       setIsSuccess(true);
     } catch {
       // Handle error
@@ -124,17 +119,13 @@ const BookAppointment = () => {
                 <CheckCircle className="h-[32px] w-[32px] text-accent" />
               </div>
               <h2 className="font-heading text-2xl font-bold text-foreground">Appointment Confirmed!</h2>
-              <p className="mt-[8px] font-body text-sm text-muted-foreground">
-                Your appointment has been booked successfully.
-              </p>
+              <p className="mt-[8px] font-body text-sm text-muted-foreground">Your appointment has been booked successfully.</p>
               <div className="mt-[24px] rounded-lg bg-muted p-[16px] text-left space-y-[8px]">
                 <p className="font-body text-sm text-foreground">
-                  <span className="font-semibold">Service:</span>{" "}
-                  {bookingServices.find((s) => s.id === selectedService)?.title}
+                  <span className="font-semibold">Service:</span> {bookingServices.find((s) => s.id === selectedService)?.title}
                 </p>
                 <p className="font-body text-sm text-foreground">
-                  <span className="font-semibold">Date:</span>{" "}
-                  {selectedDate ? format(selectedDate, "PPP") : ""}
+                  <span className="font-semibold">Date:</span> {selectedDate ? format(selectedDate, "PPP") : ""}
                 </p>
                 <p className="font-body text-sm text-foreground">
                   <span className="font-semibold">Time:</span> {selectedTime}
@@ -147,16 +138,7 @@ const BookAppointment = () => {
                 A confirmation SMS and email will be sent to your registered contact details.
               </p>
               <Button
-                onClick={() => {
-                  setStep(1);
-                  setSelectedService("");
-                  setSelectedDate(undefined);
-                  setSelectedTime("");
-                  setName("");
-                  setPhone("");
-                  setEmail("");
-                  setIsSuccess(false);
-                }}
+                onClick={() => { setStep(1); setSelectedService(""); setSelectedDate(undefined); setSelectedTime(""); setName(""); setPhone(""); setEmail(""); setIsSuccess(false); }}
                 className="mt-[24px] h-[44px] rounded-[4px] bg-primary px-[24px] py-[12px] font-heading text-sm font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 Book Another Appointment
@@ -170,7 +152,6 @@ const BookAppointment = () => {
 
   return (
     <Layout>
-      {/* Header */}
       <section className="bg-primary py-[48px]">
         <div className="container text-center">
           <h1 className="font-heading text-4xl font-bold text-primary-foreground">Book Appointment</h1>
@@ -183,17 +164,10 @@ const BookAppointment = () => {
       <section className="py-[48px]">
         <div className="container flex justify-center">
           <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-[32px] shadow-[0_4px_8px_rgba(0,0,0,0.1)]">
-            {/* Progress */}
             <div className="mb-[32px]">
               <div className="flex justify-between mb-[8px]">
                 {["Select Service", "Date & Time", "Your Details"].map((label, i) => (
-                  <span
-                    key={label}
-                    className={cn(
-                      "font-heading text-xs font-semibold",
-                      step >= i + 1 ? "text-primary" : "text-muted-foreground"
-                    )}
-                  >
+                  <span key={label} className={cn("font-heading text-xs font-semibold", step >= i + 1 ? "text-primary" : "text-muted-foreground")}>
                     {label}
                   </span>
                 ))}
@@ -201,13 +175,10 @@ const BookAppointment = () => {
               <Progress value={progressValue} className="h-[8px]" />
             </div>
 
-            {/* Step 1: Service Selection */}
             {step === 1 && (
               <div>
-                <h2 className="font-heading text-xl font-bold text-foreground mb-[24px]">
-                  Choose a Service
-                </h2>
-                <div className="grid grid-cols-2 gap-[16px] sm:grid-cols-3">
+                <h2 className="font-heading text-xl font-bold text-foreground mb-[24px]">Choose a Service</h2>
+                <div className="grid grid-cols-2 gap-[16px]">
                   {bookingServices.map((svc) => {
                     const Icon = iconMap[svc.icon] || Stethoscope;
                     const isSelected = selectedService === svc.id;
@@ -217,9 +188,7 @@ const BookAppointment = () => {
                         onClick={() => setSelectedService(svc.id)}
                         className={cn(
                           "flex flex-col items-center justify-center rounded-lg border-2 p-[16px] transition-all min-h-[110px]",
-                          isSelected
-                            ? "border-primary bg-primary/5"
-                            : "border-border bg-card hover:border-primary/40"
+                          isSelected ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
                         )}
                       >
                         <Icon className={cn("h-[28px] w-[28px] mb-[8px]", isSelected ? "text-primary" : "text-muted-foreground")} />
@@ -233,56 +202,33 @@ const BookAppointment = () => {
               </div>
             )}
 
-            {/* Step 2: Date & Time */}
             {step === 2 && (
               <div>
-                <h2 className="font-heading text-xl font-bold text-foreground mb-[24px]">
-                  Pick Date & Time
-                </h2>
+                <h2 className="font-heading text-xl font-bold text-foreground mb-[24px]">Pick Date & Time</h2>
                 <div className="space-y-[24px]">
                   <div>
-                    <Label className="font-heading text-sm font-semibold text-foreground mb-[8px] block">
-                      Appointment Date
-                    </Label>
+                    <Label className="font-heading text-sm font-semibold text-foreground mb-[8px] block">Appointment Date</Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full h-[44px] justify-start text-left font-body text-sm",
-                            !selectedDate && "text-muted-foreground"
-                          )}
-                        >
+                        <Button variant="outline" className={cn("w-full h-[44px] justify-start text-left font-body text-sm", !selectedDate && "text-muted-foreground")}>
                           <CalendarIcon className="mr-[8px] h-4 w-4" />
                           {selectedDate ? format(selectedDate, "PPP") : "Select a date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          disabled={(date) => date < new Date() || date.getDay() === 5}
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
+                        <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} disabled={(date) => date < new Date() || date.getDay() === 5} initialFocus className="p-3 pointer-events-auto" />
                       </PopoverContent>
                     </Popover>
                   </div>
                   <div>
-                    <Label className="font-heading text-sm font-semibold text-foreground mb-[8px] block">
-                      Available Time Slots
-                    </Label>
+                    <Label className="font-heading text-sm font-semibold text-foreground mb-[8px] block">Available Time Slots</Label>
                     <div className="grid grid-cols-3 gap-[8px] sm:grid-cols-5">
                       {timeSlots.map((slot) => (
                         <button
                           key={slot}
                           onClick={() => setSelectedTime(slot)}
-                          className={cn(
-                            "h-[44px] rounded-[4px] border px-[8px] font-body text-xs font-medium transition-colors",
-                            selectedTime === slot
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-card text-foreground hover:border-primary/40"
+                          className={cn("h-[44px] rounded-[4px] border px-[8px] font-body text-xs font-medium transition-colors",
+                            selectedTime === slot ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:border-primary/40"
                           )}
                         >
                           {slot}
@@ -294,78 +240,35 @@ const BookAppointment = () => {
               </div>
             )}
 
-            {/* Step 3: Patient Details */}
             {step === 3 && (
               <div>
-                <h2 className="font-heading text-xl font-bold text-foreground mb-[24px]">
-                  Your Details
-                </h2>
+                <h2 className="font-heading text-xl font-bold text-foreground mb-[24px]">Your Details</h2>
                 <div className="space-y-[16px]">
                   <div>
-                    <Label htmlFor="name" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">
-                      Full Name *
-                    </Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: undefined })); }}
-                      placeholder="Enter your full name"
-                      className={cn("h-[44px] font-body text-sm", errors.name && "border-destructive")}
-                      maxLength={100}
-                    />
+                    <Label htmlFor="name" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">Full Name *</Label>
+                    <Input id="name" value={name} onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: undefined })); }} placeholder="Enter your full name" className={cn("h-[44px] font-body text-sm", errors.name && "border-destructive")} maxLength={100} />
                     {errors.name && <p className="mt-[4px] font-body text-xs text-destructive">{errors.name}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="phone" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">
-                      Phone Number *
-                    </Label>
-                    <Input
-                      id="phone"
-                      value={phone}
-                      onChange={handlePhoneChange}
-                      placeholder="01XX-XXX-XXXX"
-                      className={cn("h-[44px] font-body text-sm", errors.phone && "border-destructive")}
-                    />
+                    <Label htmlFor="phone" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">Phone Number *</Label>
+                    <Input id="phone" value={phone} onChange={handlePhoneChange} placeholder="01XX-XXX-XXXX" className={cn("h-[44px] font-body text-sm", errors.phone && "border-destructive")} />
                     {errors.phone && <p className="mt-[4px] font-body text-xs text-destructive">{errors.phone}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="email" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">
-                      Email Address *
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })); }}
-                      placeholder="your@email.com"
-                      className={cn("h-[44px] font-body text-sm", errors.email && "border-destructive")}
-                      maxLength={255}
-                    />
+                    <Label htmlFor="email" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">Email Address *</Label>
+                    <Input id="email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })); }} placeholder="your@email.com" className={cn("h-[44px] font-body text-sm", errors.email && "border-destructive")} maxLength={255} />
                     {errors.email && <p className="mt-[4px] font-body text-xs text-destructive">{errors.email}</p>}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Navigation */}
             <div className="mt-[32px] flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => setStep((s) => s - 1)}
-                disabled={step === 1}
-                className="h-[44px] rounded-[4px] px-[24px] py-[12px] font-heading text-sm font-semibold"
-              >
-                <ChevronLeft className="mr-[4px] h-4 w-4" />
-                Back
+              <Button variant="outline" onClick={() => setStep((s) => s - 1)} disabled={step === 1} className="h-[44px] rounded-[4px] px-[24px] py-[12px] font-heading text-sm font-semibold">
+                <ChevronLeft className="mr-[4px] h-4 w-4" /> Back
               </Button>
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed() || isSubmitting}
-                className="h-[44px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-sm font-semibold text-accent-foreground hover:bg-accent/90"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="mr-[4px] h-4 w-4 animate-spin" />
-                ) : null}
+              <Button onClick={handleNext} disabled={!canProceed() || isSubmitting} className="h-[44px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-sm font-semibold text-accent-foreground hover:bg-accent/90">
+                {isSubmitting && <Loader2 className="mr-[4px] h-4 w-4 animate-spin" />}
                 {step === 3 ? (isSubmitting ? "Booking..." : "Confirm Booking") : "Next"}
                 {step < 3 && <ChevronRight className="ml-[4px] h-4 w-4" />}
               </Button>
