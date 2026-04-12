@@ -16,7 +16,7 @@ const Index = () => {
       <ServicesSection />
       <GCCCountriesSection />
       <TrustSection />
-      <TestimonialSection />
+      <CountryGuidelinesSection />
       <QuickContactSection />
     </Layout>
   );
