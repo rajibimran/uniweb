@@ -1,6 +1,10 @@
+import { useEffect } from "react";
 import { Play } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { facilityImages } from "@/data/mockData";
 
 const heroImages = [
@@ -14,13 +18,18 @@ interface AboutProps {
 }
 
 const About = ({ gallery = facilityImages }: AboutProps) => {
+  useEffect(() => { document.title = "About Us — Unicare Medical, Dhaka"; }, []);
+
   return (
     <Layout>
-      <PageHeroSlider
-        images={heroImages}
-        title="About Us"
-        subtitle="Delivering trusted, GCC-approved medical services in Dhaka."
-      />
+      <PageHeroSlider images={heroImages} title="About Us" subtitle="Delivering trusted, GCC-approved medical services in Dhaka.">
+        <div className="mt-[24px] flex flex-col items-center gap-[12px] sm:flex-row sm:justify-center">
+          <Link to="/book"><Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">Book Appointment</Button></Link>
+          <Link to="/services"><Button className="h-[48px] min-w-[200px] rounded-[4px] bg-secondary px-[24px] py-[12px] font-heading text-base font-semibold text-secondary-foreground shadow-md hover:bg-secondary/90">Our Services</Button></Link>
+        </div>
+      </PageHeroSlider>
+
+      <PageBreadcrumb items={[{ label: "About Us" }]} />
 
       {/* Mission */}
       <section className="py-[48px]">
@@ -33,12 +42,7 @@ const About = ({ gallery = facilityImages }: AboutProps) => {
               </p>
             </div>
             <div className="rounded-lg overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop"
-                alt="Medical team reviewing patient records"
-                className="w-full h-auto object-cover"
-                loading="lazy"
-              />
+              <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop" alt="Medical team reviewing patient records" className="w-full h-auto object-cover" loading="lazy" />
             </div>
           </div>
         </div>
@@ -49,12 +53,7 @@ const About = ({ gallery = facilityImages }: AboutProps) => {
         <div className="container">
           <div className="grid grid-cols-1 gap-[32px] lg:grid-cols-2 items-center">
             <div className="order-2 lg:order-1 rounded-lg overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1579154204601-01588f351e67?w=600&h=400&fit=crop"
-                alt="Advanced laboratory equipment"
-                className="w-full h-auto object-cover"
-                loading="lazy"
-              />
+              <img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?w=600&h=400&fit=crop" alt="Advanced laboratory equipment" className="w-full h-auto object-cover" loading="lazy" />
             </div>
             <div className="order-1 lg:order-2">
               <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Our Center</h2>
@@ -73,27 +72,17 @@ const About = ({ gallery = facilityImages }: AboutProps) => {
             <h2 className="font-heading text-2xl font-bold text-foreground">Why Choose Us</h2>
           </div>
           <div className="grid grid-cols-1 gap-[24px] sm:grid-cols-3">
-            <div className="rounded-lg border border-border bg-card p-[24px] text-center">
-              <img src="https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=400&h=250&fit=crop" alt="Precision diagnostics" className="w-full h-[160px] object-cover rounded-lg mb-[16px]" loading="lazy" />
-              <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Precision</h3>
-              <p className="font-body text-sm text-muted-foreground">
-                Automated systems minimize human error in chemical and biological analysis.
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-[24px] text-center">
-              <img src="https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&h=250&fit=crop" alt="Fast processing" className="w-full h-[160px] object-cover rounded-lg mb-[16px]" loading="lazy" />
-              <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Speed</h3>
-              <p className="font-body text-sm text-muted-foreground">
-                High-throughput analyzers allow us to process thousands of samples daily.
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-[24px] text-center">
-              <img src="https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=400&h=250&fit=crop" alt="Reliable results" className="w-full h-[160px] object-cover rounded-lg mb-[16px]" loading="lazy" />
-              <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">Reliability</h3>
-              <p className="font-body text-sm text-muted-foreground">
-                Daily QC/Calibration and regular maintenance for consistency.
-              </p>
-            </div>
+            {[
+              { img: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=400&h=250&fit=crop", alt: "Precision diagnostics", title: "Precision", desc: "Automated systems minimize human error in chemical and biological analysis." },
+              { img: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&h=250&fit=crop", alt: "Fast processing", title: "Speed", desc: "High-throughput analyzers allow us to process thousands of samples daily." },
+              { img: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=400&h=250&fit=crop", alt: "Reliable results", title: "Reliability", desc: "Daily QC/Calibration and regular maintenance for consistency." },
+            ].map((v) => (
+              <div key={v.title} className="rounded-lg border border-border bg-card p-[24px] text-center">
+                <img src={v.img} alt={v.alt} className="w-full h-[160px] object-cover rounded-lg mb-[16px]" loading="lazy" />
+                <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">{v.title}</h3>
+                <p className="font-body text-sm text-muted-foreground">{v.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -103,25 +92,15 @@ const About = ({ gallery = facilityImages }: AboutProps) => {
         <div className="container">
           <div className="text-center mb-[32px]">
             <h2 className="font-heading text-2xl font-bold text-foreground">Facilities & Gallery</h2>
-            <p className="mt-[8px] font-body text-sm text-muted-foreground">
-              Our center is designed to provide a clean, organized, and patient-friendly environment.
-            </p>
+            <p className="mt-[8px] font-body text-sm text-muted-foreground">Our center is designed to provide a clean, organized, and patient-friendly environment.</p>
           </div>
-
           <div className="columns-1 gap-[16px] sm:columns-2 lg:columns-3">
             {gallery.map((img, i) => (
               <div key={i} className="mb-[16px] break-inside-avoid overflow-hidden rounded-lg">
-                <img
-                  src={img.src}
-                  alt={img.alt}
-                  className="w-full object-cover transition-transform duration-300 hover:scale-105"
-                  loading="lazy"
-                />
+                <img src={img.src} alt={img.alt} className="w-full object-cover transition-transform duration-300 hover:scale-105" loading="lazy" />
               </div>
             ))}
           </div>
-
-          {/* Virtual Tour Placeholder */}
           <div className="mt-[32px]">
             <h3 className="font-heading text-xl font-bold text-foreground mb-[16px] text-center">Virtual Tour</h3>
             <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-lg bg-card border border-border flex items-center justify-center">

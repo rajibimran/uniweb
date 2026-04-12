@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   Stethoscope, ScanLine, TestTubes, Syringe,
-  ChevronRight, ChevronLeft, Loader2, CheckCircle, CalendarIcon,
+  ChevronRight, ChevronLeft, Loader2, CheckCircle, CalendarIcon, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 
 const iconMap: Record<string, React.ElementType> = {
   Stethoscope, ScanLine, TestTubes, Syringe,
@@ -45,6 +46,7 @@ interface FormErrors {
 }
 
 const BookAppointment = () => {
+  useEffect(() => { document.title = "Book Appointment — Unicare Medical, Dhaka"; }, []);
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -164,8 +166,14 @@ const BookAppointment = () => {
         subtitle="Schedule your medical examination in three simple steps."
       />
 
+      <PageBreadcrumb items={[{ label: "Book Appointment" }]} />
+
       <section className="py-[48px]">
-        <div className="container flex justify-center">
+        <div className="container flex flex-col items-center">
+          <div className="flex items-center gap-[8px] mb-[16px]">
+            <ShieldCheck className="h-5 w-5 text-accent" />
+            <span className="font-body text-xs text-muted-foreground">Secure Booking — Your data is protected</span>
+          </div>
           <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-[32px] shadow-[0_4px_8px_rgba(0,0,0,0.1)]">
             <div className="mb-[32px]">
               <div className="flex justify-between mb-[8px]">

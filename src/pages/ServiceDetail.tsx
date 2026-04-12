@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Stethoscope, ScanLine, TestTubes, Syringe,
@@ -5,6 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/layout/Layout";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { serviceDetails, type ServiceDetail } from "@/data/mockData";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -18,6 +20,10 @@ interface ServicePageProps {
 const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
   const { slug } = useParams<{ slug: string }>();
   const service = serviceProp || (slug ? serviceDetails[slug] : undefined);
+
+  useEffect(() => {
+    if (service) document.title = `${service.title} — Unicare Medical, Dhaka`;
+  }, [service]);
 
   if (!service) {
     return (
@@ -38,9 +44,7 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
   }
 
   const Icon = iconMap[service.icon] || Stethoscope;
-  const relatedServices = service.relatedSlugs
-    .map((s) => serviceDetails[s])
-    .filter(Boolean);
+  const relatedServices = service.relatedSlugs.map((s) => serviceDetails[s]).filter(Boolean);
 
   return (
     <Layout>
@@ -55,6 +59,8 @@ const ServicePage = ({ service: serviceProp }: ServicePageProps) => {
           <h1 className="font-heading text-3xl font-bold text-white sm:text-4xl">{service.title}</h1>
         </div>
       </section>
+
+      <PageBreadcrumb items={[{ label: "Services", href: "/services" }, { label: service.title }]} />
 
       <div className="container py-[48px]">
         <div className="grid grid-cols-1 gap-[32px] lg:grid-cols-3">

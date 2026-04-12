@@ -12,6 +12,9 @@ import ReportCheck from "./pages/ReportCheck.tsx";
 import ScreeningProcess from "./pages/ScreeningProcess.tsx";
 import FitnessPage from "./pages/FitnessPage.tsx";
 import EquipmentPage from "./pages/EquipmentPage.tsx";
+import Contact from "./pages/Contact.tsx";
+import Blog from "./pages/Blog.tsx";
+import Privacy from "./pages/Privacy.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -32,6 +35,9 @@ const App = () => (
           <Route path="/process" element={<ScreeningProcess />} />
           <Route path="/fitness" element={<FitnessPage />} />
           <Route path="/equipment" element={<EquipmentPage />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/privacy" element={<Privacy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

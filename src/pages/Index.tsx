@@ -1,16 +1,21 @@
+import { useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import HeroSection from "@/components/home/HeroSection";
 import ServicesSection from "@/components/home/ServicesSection";
 import TrustSection from "@/components/home/TrustSection";
 import TestimonialSection from "@/components/home/TestimonialSection";
+import QuickContactSection from "@/components/home/QuickContactSection";
 
 const Index = () => {
+  useEffect(() => { document.title = "Unicare Medical, Dhaka — GCC Approved Medical Center"; }, []);
+
   return (
     <Layout>
       <HeroSection />
       <ServicesSection />
       <TrustSection />
       <TestimonialSection />
+      <QuickContactSection />
     </Layout>
   );
 };

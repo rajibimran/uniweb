@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, FileDown, ShieldCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 
 const heroImages = [
   { src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1600&h=900&fit=crop", alt: "Medical report analysis" },
@@ -22,6 +23,7 @@ interface ReportResult {
 }
 
 const ReportCheck = () => {
+  useEffect(() => { document.title = "Check Report — Unicare Medical, Dhaka"; }, []);
   const [patientId, setPatientId] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [errors, setErrors] = useState<{ patientId?: string; phone?: string }>({});
@@ -86,6 +88,8 @@ const ReportCheck = () => {
         title="Check Your Report"
         subtitle="Enter your Patient ID and registered phone number to access your medical report."
       />
+
+      <PageBreadcrumb items={[{ label: "Report Search" }]} />
 
       <section className="py-[64px]">
         <div className="container flex justify-center">

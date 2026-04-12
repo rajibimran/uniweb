@@ -1,6 +1,10 @@
+import { useEffect } from "react";
 import { ShieldCheck, ShieldAlert, AlertTriangle, Dumbbell } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { fitnessCriteria, type FitnessCriteria } from "@/data/mockData";
 
 const categoryIcons: Record<string, React.ElementType> = {
@@ -21,13 +25,17 @@ interface FitnessPageProps {
 }
 
 const FitnessPage = ({ criteria = fitnessCriteria }: FitnessPageProps) => {
+  useEffect(() => { document.title = "Fitness Criteria — Unicare Medical, Dhaka"; }, []);
+
   return (
     <Layout>
-      <PageHeroSlider
-        images={heroImages}
-        title="Fitness Criteria"
-        subtitle="Health requirements for overseas employment certification. Candidates must meet the following criteria to be certified fit."
-      />
+      <PageHeroSlider images={heroImages} title="Fitness Criteria" subtitle="Health requirements for overseas employment certification. Candidates must meet the following criteria to be certified fit.">
+        <div className="mt-[24px] flex justify-center">
+          <Link to="/book"><Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">Book Appointment</Button></Link>
+        </div>
+      </PageHeroSlider>
+
+      <PageBreadcrumb items={[{ label: "Fitness Criteria" }]} />
 
       <section className="py-[48px]">
         <div className="container max-w-4xl">

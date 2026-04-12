@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ClipboardList, UserCheck, TestTubes, Stethoscope, ScanLine, FileCheck,
   Download, ChevronDown, ChevronUp, Clock,
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 
 interface ProcessStep {
   icon: React.ElementType;
@@ -100,6 +101,7 @@ const heroImages = [
 ];
 
 const ScreeningProcess = () => {
+  useEffect(() => { document.title = "Screening Process — Unicare Medical, Dhaka"; }, []);
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
 
   const toggleStep = (index: number) => {
@@ -113,6 +115,8 @@ const ScreeningProcess = () => {
         title="Screening Process"
         subtitle="Your step-by-step guide to the GCC medical screening journey at Unicare Medical."
       />
+
+      <PageBreadcrumb items={[{ label: "Screening Process" }]} />
 
       <section className="py-[48px]">
         <div className="container max-w-3xl">

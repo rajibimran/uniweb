@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, Clock } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { footerQuickLinks, footerServices, certificationLogos, type FooterLink } from "@/data/mockData";
 
@@ -21,7 +21,7 @@ const Footer = ({
           <div>
             <div className="flex items-center gap-[8px] mb-[16px]">
               <img
-                src="https://unicaremedicalbd.co/assets/img/logo.png"
+                src="https://unicaremedicalbd.co/assets/img/logo_unicare.png"
                 alt="Unicare Medical Services Logo"
                 className="h-[36px] w-auto brightness-0 invert"
               />
@@ -106,10 +106,18 @@ const Footer = ({
         </div>
 
         {/* Copyright */}
-        <div className="mt-[24px] border-t border-background/20 pt-[16px] text-center">
+        <div className="mt-[24px] border-t border-background/20 pt-[16px] flex flex-col sm:flex-row items-center justify-between gap-[12px]">
           <p className="font-body text-xs text-background/50">
             © {new Date().getFullYear()} Unicare Medical Services, Dhaka. All rights reserved.
           </p>
+          <div className="flex items-center gap-[16px]">
+            <Link to="/privacy" className="font-body text-xs text-background/50 hover:text-background">Privacy Policy</Link>
+            <div className="flex items-center gap-[12px]">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-background/50 hover:text-background"><Facebook className="h-4 w-4" /></a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-background/50 hover:text-background"><Instagram className="h-4 w-4" /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-background/50 hover:text-background"><Linkedin className="h-4 w-4" /></a>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
