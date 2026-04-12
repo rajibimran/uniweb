@@ -29,7 +29,7 @@ const Header = ({ items = navItems }: HeaderProps) => {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-[8px]">
           <img
-            src="https://unicaremedicalbd.co/assets/img/logo.png"
+            src="https://unicaremedicalbd.co/assets/img/logo_unicare.png"
             alt="Unicare Medical Services Logo"
             className="h-[44px] w-auto"
           />
