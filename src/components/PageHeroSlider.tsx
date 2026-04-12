@@ -38,16 +38,18 @@ const PageHeroSlider = ({
             i === current ? "opacity-100" : "opacity-0"
           }`}
           loading={i === 0 ? "eager" : "lazy"}
+          width={1600}
+          height={900}
         />
       ))}
       <div className="absolute inset-0 bg-foreground/65" />
 
-      <div className="container relative z-10 py-[48px] text-center">
-        <h1 className="font-heading text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
+      <div className="container relative z-10 px-4 py-8 text-center sm:px-6 sm:py-[48px]">
+        <h1 className="font-heading text-3xl font-extrabold leading-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
           {title}
         </h1>
         {subtitle && (
-          <p className="mx-auto mt-[16px] max-w-2xl font-body text-lg leading-relaxed text-white/90">
+          <p className="mx-auto mt-3 max-w-2xl font-body text-base leading-relaxed text-white/90 sm:mt-[16px] sm:text-lg">
             {subtitle}
           </p>
         )}
@@ -56,7 +58,7 @@ const PageHeroSlider = ({
 
       {/* Slider dots */}
       {images.length > 1 && (
-        <div className="absolute bottom-[24px] left-1/2 z-10 flex -translate-x-1/2 gap-[8px]">
+        <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-[8px] sm:bottom-[24px]">
           {images.map((_, i) => (
             <button
               key={i}
