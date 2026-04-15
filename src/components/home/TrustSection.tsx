@@ -1,33 +1,80 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { stats, certificationLogos, servicePackages, type StatItem, type ServicePackage } from "@/data/mockData";
+import { RichText } from "@/components/content/RichText";
+import {
+  certificationBadges as defaultCerts,
+  servicePackages as defaultPackages,
+  stats as defaultStats,
+  type StatItem,
+  type ServicePackage,
+} from "@/data/mockData";
+import { api, IS_STRAPI_CONFIGURED, type CertificationBadge } from "@/lib/api";
 import { Phone, CheckCircle } from "lucide-react";
 
-interface TrustSectionProps {
-  items?: StatItem[];
-  certifications?: string[];
-  packages?: ServicePackage[];
-}
+const TrustSection = () => {
+  const [stats, setStats] = useState<StatItem[] | null>(IS_STRAPI_CONFIGURED ? null : defaultStats);
+  const [packages, setPackages] = useState<ServicePackage[] | null>(IS_STRAPI_CONFIGURED ? null : defaultPackages);
+  const [certs, setCerts] = useState<CertificationBadge[] | null>(IS_STRAPI_CONFIGURED ? null : defaultCerts);
+  const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
 
-const TrustSection = ({
-  items = stats,
-  certifications = certificationLogos,
-  packages = servicePackages,
-}: TrustSectionProps) => {
+  useEffect(() => {
+    if (!IS_STRAPI_CONFIGURED) return;
+    let cancelled = false;
+    (async () => {
+      const [s, p, c] = await Promise.all([api.stats.getAll(), api.servicePackages.getAll(), api.certifications.getAll()]);
+      if (!cancelled) {
+        setStats(s);
+        setPackages(p);
+        setCerts(c);
+        setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!ready || !stats || !packages || !certs) {
+    return (
+      <>
+        <section className="bg-foreground py-8 sm:py-[48px]" aria-busy="true" aria-label="Loading trust section">
+          <div className="container flex flex-wrap justify-center gap-8 px-4 sm:gap-[64px] sm:px-6">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex flex-col items-center gap-2">
+                <div className="h-[100px] w-[100px] animate-pulse rounded-full bg-background/10 sm:h-[136px] sm:w-[136px]" />
+                <div className="h-3 w-24 animate-pulse rounded bg-background/10" />
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="py-8 sm:py-[48px]">
+          <div className="container px-4 sm:px-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-[24px] lg:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-48 animate-pulse rounded-lg border border-border bg-muted" />
+              ))}
+            </div>
+          </div>
+        </section>
+      </>
+    );
+  }
+
   return (
     <>
-      {/* Stats */}
       <section className="bg-foreground py-8 sm:py-[48px]">
         <div className="container px-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-[64px]">
-            {items.map((stat) => (
+            {stats.map((stat) => (
               <div key={stat.label} className="flex flex-col items-center">
                 <div className="relative h-[100px] w-[100px] sm:h-[136px] sm:w-[136px]">
                   <svg className="h-full w-full -rotate-90" viewBox="0 0 120 120">
                     <circle cx="60" cy="60" r="54" fill="none" stroke="hsl(var(--background) / 0.2)" strokeWidth="8" />
                     <circle
-                      cx="60" cy="60" r="54" fill="none"
+                      cx="60"
+                      cy="60"
+                      r="54"
+                      fill="none"
                       stroke="hsl(var(--accent))"
                       strokeWidth="8"
                       strokeLinecap="round"
@@ -38,7 +85,8 @@ const TrustSection = ({
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="font-heading text-xl font-bold text-background sm:text-2xl">
-                      {stat.value}{stat.suffix}
+                      {stat.value}
+                      {stat.suffix}
                     </span>
                   </div>
                 </div>
@@ -49,7 +97,6 @@ const TrustSection = ({
         </div>
       </section>
 
-      {/* Service Packages */}
       <section className="py-8 sm:py-[48px]">
         <div className="container px-4 sm:px-6">
           <div className="text-center mb-6 sm:mb-[32px]">
@@ -62,7 +109,10 @@ const TrustSection = ({
             {packages.map((pkg) => (
               <div key={pkg.title} className="rounded-lg border border-border bg-card p-4 flex flex-col sm:p-[24px]">
                 <h3 className="font-heading text-base font-bold text-foreground sm:text-lg">{pkg.title}</h3>
-                <p className="mt-1 font-body text-xs text-muted-foreground flex-1 sm:mt-[8px] sm:text-sm">{pkg.description}</p>
+                <RichText
+                  value={pkg.description}
+                  className="mt-1 flex-1 sm:mt-[8px] [&_p]:text-xs sm:[&_p]:text-sm [&_p]:text-muted-foreground"
+                />
                 <ul className="mt-3 space-y-2 sm:mt-[16px] sm:space-y-[8px]">
                   {pkg.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 sm:gap-[8px]">
@@ -86,17 +136,20 @@ const TrustSection = ({
         </div>
       </section>
 
-      {/* Certifications */}
       <section className="bg-muted py-6 sm:py-[32px]">
         <div className="container px-4 sm:px-6">
           <div className="overflow-hidden">
             <div className="flex animate-scroll gap-4 sm:gap-[32px]" style={{ width: "max-content" }}>
-              {[...certifications, ...certifications].map((cert, i) => (
+              {[...certs, ...certs].map((cert, i) => (
                 <div
-                  key={`${cert}-${i}`}
+                  key={`${cert.name}-${i}`}
                   className="flex h-10 items-center justify-center rounded-lg border border-border bg-card px-4 font-heading text-xs font-semibold text-muted-foreground whitespace-nowrap sm:h-[48px] sm:px-[24px] sm:text-sm"
                 >
-                  {cert}
+                  {cert.logoUrl ? (
+                    <img src={cert.logoUrl} alt={cert.name} className="max-h-8 max-w-[120px] object-contain sm:max-h-9" />
+                  ) : (
+                    cert.name
+                  )}
                 </div>
               ))}
             </div>

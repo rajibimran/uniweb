@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import {
   Stethoscope, ScanLine, TestTubes, Syringe,
@@ -13,31 +13,33 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useLocation } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
+import { SeoHelmet } from "@/components/seo/SeoHelmet";
+import { api, defaultBookingPageConfig, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
 
 const iconMap: Record<string, React.ElementType> = {
   Stethoscope, ScanLine, TestTubes, Syringe,
 };
 
-const bookingServices = [
+const defaultBookingServices = [
   { id: "physical-examination", icon: "Stethoscope", title: "Physical Examination" },
   { id: "digital-radiology", icon: "ScanLine", title: "Digital Radiology" },
   { id: "laboratory-tests", icon: "TestTubes", title: "Laboratory Tests" },
   { id: "vaccination", icon: "Syringe", title: "Vaccination" },
 ];
 
-const timeSlots = [
-  "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
-  "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
-  "04:00 PM", "04:30 PM", "05:00 PM",
-];
-
-const heroImages = [
+const defaultBookHero: PageHero = {
+  page: "book",
+  title: "Book Appointment",
+  subtitle: "Schedule your medical examination in three simple steps.",
+  slides: [
   { src: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1600&h=900&fit=crop", alt: "Booking an appointment" },
   { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&h=900&fit=crop", alt: "Medical center reception" },
-];
+  ],
+};
 
 interface FormErrors {
   name?: string;
@@ -46,7 +48,11 @@ interface FormErrors {
 }
 
 const BookAppointment = () => {
-  useEffect(() => { document.title = "Book Appointment — Unicare Medical, Dhaka"; }, []);
+  const { pathname } = useLocation();
+  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultBookHero);
+  const [pageConfig, setPageConfig] = useState(IS_STRAPI_CONFIGURED ? null : defaultBookingPageConfig);
+  const [bookingServices, setBookingServices] = useState(defaultBookingServices);
+  const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -57,6 +63,30 @@ const BookAppointment = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!IS_STRAPI_CONFIGURED) return;
+    let cancelled = false;
+    (async () => {
+      const [h, cfg, services] = await Promise.all([
+        api.hero.getByPage("book", defaultBookHero),
+        api.bookingPage.get(),
+        api.services.getAll(),
+      ]);
+      if (!cancelled) {
+        const svcRows = services
+          .map((s) => ({ id: s.href.replace("/services/", ""), icon: s.icon, title: s.title }))
+          .filter((s) => s.id && s.title);
+        setHero(h);
+        setPageConfig(cfg);
+        setBookingServices(svcRows.length > 0 ? svcRows : defaultBookingServices);
+        setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const progressValue = step === 1 ? 33 : step === 2 ? 66 : 100;
 
@@ -120,6 +150,13 @@ const BookAppointment = () => {
   if (isSuccess) {
     return (
       <Layout>
+        <SeoHelmet
+          layers={pageConfig?.seo ? [pageConfig.seo] : []}
+          fallbackTitle="Appointment confirmed — Unicare Medical, Dhaka"
+          fallbackDescription="Your booking was submitted successfully."
+          pathForCanonical={pathname}
+          forceNoIndex
+        />
         <section className="py-[64px]">
           <div className="container flex justify-center">
             <div className="w-full max-w-lg rounded-lg border border-border bg-card p-[32px] shadow-[0_4px_8px_rgba(0,0,0,0.1)] text-center">
@@ -160,10 +197,19 @@ const BookAppointment = () => {
 
   return (
     <Layout>
+      {!ready || !hero || !pageConfig ? (
+        <section className="relative min-h-[420px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading booking page" />
+      ) : null}
+      <SeoHelmet
+        layers={hero?.seo ? [hero.seo] : []}
+        fallbackTitle={`${hero?.title ?? "Book Appointment"} — Unicare Medical, Dhaka`}
+        fallbackDescription={hero?.subtitle ?? "Schedule your medical examination in three simple steps."}
+        pathForCanonical={pathname}
+      />
       <PageHeroSlider
-        images={heroImages}
-        title="Book Appointment"
-        subtitle="Schedule your medical examination in three simple steps."
+        images={hero?.slides ?? defaultBookHero.slides}
+        title={hero?.title ?? defaultBookHero.title}
+        subtitle={hero?.subtitle ?? defaultBookHero.subtitle}
       />
 
       <PageBreadcrumb items={[{ label: "Book Appointment" }]} />
@@ -234,7 +280,7 @@ const BookAppointment = () => {
                   <div>
                     <Label className="font-heading text-sm font-semibold text-foreground mb-[8px] block">Available Time Slots</Label>
                     <div className="grid grid-cols-3 gap-[8px] sm:grid-cols-5">
-                      {timeSlots.map((slot) => (
+                      {(pageConfig?.timeSlots ?? defaultBookingPageConfig.timeSlots).map((slot) => (
                         <button
                           key={slot}
                           onClick={() => setSelectedTime(slot)}

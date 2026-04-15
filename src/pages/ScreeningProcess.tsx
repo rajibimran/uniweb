@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ClipboardList, UserCheck, TestTubes, Stethoscope, ScanLine, FileCheck,
   Download, ChevronDown, ChevronUp, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLocation } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
+import { SeoHelmet } from "@/components/seo/SeoHelmet";
+import { RichText } from "@/components/content/RichText";
+import { api, defaultScreeningProcessPageConfig, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
 
 interface ProcessStep {
   icon: React.ElementType;
@@ -19,101 +23,68 @@ interface ProcessStep {
   details: string[];
 }
 
-const processSteps: ProcessStep[] = [
-  {
-    icon: ClipboardList,
-    title: "Registration & Document Check",
-    description: "Present your documents at the reception desk for verification and registration.",
-    estimatedTime: "15–20 min",
-    details: [
-      "Bring original passport and 2 passport-size photos",
-      "Submit GAMCA slip or token number",
-      "Complete patient registration form",
-      "Receive your medical file and queue number",
-    ],
-  },
-  {
-    icon: TestTubes,
-    title: "Sample Collection",
-    description: "Blood and urine samples are collected by certified laboratory technicians.",
-    estimatedTime: "10–15 min",
-    details: [
-      "Ensure 8–12 hours fasting for accurate blood work",
-      "Blood drawn via venipuncture by trained phlebotomist",
-      "Urine sample collected in sterile container",
-      "Samples labeled and sent to automated analyzers",
-    ],
-  },
-  {
-    icon: Stethoscope,
-    title: "Physical Examination",
-    description: "A comprehensive physical exam conducted by a licensed physician.",
-    estimatedTime: "20–30 min",
-    details: [
-      "General appearance and vital signs assessment",
-      "Cardiovascular, respiratory, and abdominal examination",
-      "Musculoskeletal and neurological screening",
-      "Skin examination and ENT check",
-    ],
-  },
-  {
-    icon: ScanLine,
-    title: "Imaging & Diagnostics",
-    description: "Chest X-ray, ECG, and any required imaging performed by certified technicians.",
-    estimatedTime: "15–25 min",
-    details: [
-      "Digital chest X-ray (PA view) with minimal radiation",
-      "12-lead ECG if cardiac screening is required",
-      "Vision testing including acuity and color blindness",
-      "Additional imaging as prescribed by physician",
-    ],
-  },
-  {
-    icon: UserCheck,
-    title: "Doctor Consultation & Review",
-    description: "Senior physician reviews all results and conducts final assessment.",
-    estimatedTime: "10–15 min",
-    details: [
-      "All test results compiled and reviewed",
-      "Final medical opinion by senior consultant",
-      "Any follow-up tests ordered if necessary",
-      "Medical fitness determination",
-    ],
-  },
-  {
-    icon: FileCheck,
-    title: "Report Generation & Collection",
-    description: "Your medical report is compiled, certified, and made available for collection.",
-    estimatedTime: "24–48 hours",
-    details: [
-      "Results compiled into standardized GCC report format",
-      "Report reviewed and signed by Chief Medical Officer",
-      "Digital report uploaded to online portal",
-      "Physical report available at reception for pickup",
-    ],
-  },
-];
-
-const heroImages = [
+const defaultProcessHero: PageHero = {
+  page: "process",
+  title: "Screening Process",
+  subtitle: "Your step-by-step guide to the GCC medical screening journey at Unicare Medical.",
+  slides: [
   { src: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1600&h=900&fit=crop", alt: "Medical screening process" },
   { src: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=1600&h=900&fit=crop", alt: "Patient consultation" },
   { src: "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=1600&h=900&fit=crop", alt: "Laboratory analysis" },
-];
+  ],
+};
 
 const ScreeningProcess = () => {
-  useEffect(() => { document.title = "Screening Process — Unicare Medical, Dhaka"; }, []);
+  const { pathname } = useLocation();
+  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultProcessHero);
+  const [pageConfig, setPageConfig] = useState(IS_STRAPI_CONFIGURED ? null : defaultScreeningProcessPageConfig);
+  const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
+
+  useEffect(() => {
+    if (!IS_STRAPI_CONFIGURED) return;
+    let cancelled = false;
+    (async () => {
+      const [h, cfg] = await Promise.all([api.hero.getByPage("process", defaultProcessHero), api.screeningProcessPage.get()]);
+      if (!cancelled) {
+        setHero(h);
+        setPageConfig(cfg);
+        setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const toggleStep = (index: number) => {
     setExpandedStep(expandedStep === index ? null : index);
   };
 
+  const processSteps: ProcessStep[] = (pageConfig?.steps ?? defaultScreeningProcessPageConfig.steps).map((step) => {
+    const key = step.title.toLowerCase();
+    let icon: React.ElementType = ClipboardList;
+    if (key.includes("sample")) icon = TestTubes;
+    else if (key.includes("physical")) icon = Stethoscope;
+    else if (key.includes("imaging") || key.includes("diagnostic")) icon = ScanLine;
+    else if (key.includes("consultation") || key.includes("review")) icon = UserCheck;
+    else if (key.includes("report")) icon = FileCheck;
+    return { ...step, icon };
+  });
+
   return (
     <Layout>
+      <SeoHelmet
+        layers={hero?.seo ? [hero.seo, pageConfig?.seo] : pageConfig?.seo ? [pageConfig.seo] : []}
+        fallbackTitle={`${hero?.title ?? "Screening Process"} — Unicare Medical, Dhaka`}
+        fallbackDescription={hero?.subtitle ?? "Your step-by-step guide to the GCC medical screening journey at Unicare Medical."}
+        pathForCanonical={pathname}
+      />
+      {!ready ? <section className="relative min-h-[400px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading process page" /> : null}
       <PageHeroSlider
-        images={heroImages}
-        title="Screening Process"
-        subtitle="Your step-by-step guide to the GCC medical screening journey at Unicare Medical."
+        images={hero?.slides ?? defaultProcessHero.slides}
+        title={hero?.title ?? defaultProcessHero.title}
+        subtitle={hero?.subtitle ?? defaultProcessHero.subtitle}
       />
 
       <PageBreadcrumb items={[{ label: "Screening Process" }]} />
@@ -130,10 +101,11 @@ const ScreeningProcess = () => {
                 loading="lazy"
               />
               <div>
-                <h2 className="font-heading text-lg font-bold text-foreground">Preparation Checklist</h2>
-                <p className="mt-[4px] font-body text-sm text-muted-foreground">
-                  Download our complete preparation guide before your visit.
-                </p>
+                <h2 className="font-heading text-lg font-bold text-foreground">{pageConfig?.checklistTitle ?? defaultScreeningProcessPageConfig.checklistTitle}</h2>
+                <RichText
+                  value={pageConfig?.checklistDescription ?? defaultScreeningProcessPageConfig.checklistDescription}
+                  className="mt-[4px] [&_p]:text-sm [&_p]:text-muted-foreground"
+                />
               </div>
             </div>
             <Button className="h-[48px] min-w-[220px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-sm font-semibold text-accent-foreground hover:bg-accent/90 shrink-0">
@@ -146,7 +118,7 @@ const ScreeningProcess = () => {
           <div className="flex items-center justify-center gap-[8px] mb-[32px]">
             <Clock className="h-5 w-5 text-primary" />
             <span className="font-heading text-sm font-semibold text-foreground">
-              Total Estimated Time: 2–3 hours (report in 24–48 hours)
+              {pageConfig?.totalTimeLabel ?? defaultScreeningProcessPageConfig.totalTimeLabel}
             </span>
           </div>
 
@@ -191,7 +163,7 @@ const ScreeningProcess = () => {
                           </span>
                         </div>
                         <h3 className="mt-[4px] font-heading text-lg font-semibold text-foreground">{step.title}</h3>
-                        <p className="mt-[4px] font-body text-sm text-muted-foreground">{step.description}</p>
+                        <RichText value={step.description} className="mt-[4px] [&_p]:text-sm [&_p]:text-muted-foreground" />
                       </div>
                       <div className="ml-[8px] mt-[4px] shrink-0">
                         {isExpanded ? (

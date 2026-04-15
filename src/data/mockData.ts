@@ -1,3 +1,5 @@
+import type { PageSeo } from "@/lib/api";
+
 export interface NavItem {
   label: string;
   href: string;
@@ -6,15 +8,20 @@ export interface NavItem {
 
 export interface ServiceCard {
   icon: string;
+  /** Optional uploaded icon (Strapi Media); when set, UI prefers this over Lucide `icon`. */
+  iconImage?: string;
   title: string;
   description: string;
   href: string;
   category: string;
+  /** Card thumbnail from Strapi (cardImage / heroImage). */
+  cardImage?: string;
 }
 
 export interface ServiceDetail {
   slug: string;
   icon: string;
+  iconImage?: string;
   title: string;
   category: string;
   heroImage: string;
@@ -25,6 +32,8 @@ export interface ServiceDetail {
   timeline: { step: number; title: string; description: string }[];
   documents: { name: string; required: boolean }[];
   relatedSlugs: string[];
+  /** When using Strapi, populated from `seo` component. */
+  seo?: PageSeo;
 }
 
 export interface StatItem {
@@ -65,6 +74,7 @@ export interface EquipmentItem {
   qty: string;
   origin?: string;
   status?: string;
+  image?: string;
 }
 
 export interface FitnessCriteria {
@@ -475,6 +485,7 @@ export const footerQuickLinks: FooterLink[] = [
   { label: "Report Search", href: "/reports" },
   { label: "News & Updates", href: "/news" },
   { label: "Contact", href: "/contact" },
+  { label: "Privacy Policy", href: "/privacy" },
 ];
 
 export const footerServices: FooterLink[] = [
@@ -484,6 +495,12 @@ export const footerServices: FooterLink[] = [
   { label: "Vaccination", href: "/services/vaccination" },
 ];
 
-export const certificationLogos: string[] = [
-  "GAMCA", "BMET", "WHO", "MOH Kuwait", "MOH Saudi", "MOH UAE",
+/** Fallback when Strapi is off; `logoUrl` empty shows text badge in UI. */
+export const certificationBadges: { name: string; logoUrl: string }[] = [
+  { name: "GAMCA", logoUrl: "" },
+  { name: "BMET", logoUrl: "" },
+  { name: "WHO", logoUrl: "" },
+  { name: "MOH Kuwait", logoUrl: "" },
+  { name: "MOH Saudi", logoUrl: "" },
+  { name: "MOH UAE", logoUrl: "" },
 ];

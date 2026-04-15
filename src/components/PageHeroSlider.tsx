@@ -6,6 +6,7 @@ interface PageHeroSliderProps {
   subtitle?: string;
   children?: React.ReactNode;
   height?: string;
+  promoVideoUrl?: string;
 }
 
 const PageHeroSlider = ({
@@ -14,34 +15,56 @@ const PageHeroSlider = ({
   subtitle,
   children,
   height = "min-h-[400px]",
+  promoVideoUrl,
 }: PageHeroSliderProps) => {
   const [current, setCurrent] = useState(0);
+  const mediaItems = promoVideoUrl
+    ? [...images, { src: promoVideoUrl, alt: "Promotional video", kind: "video" as const }]
+    : images.map((img) => ({ ...img, kind: "image" as const }));
 
+  const len = Math.max(1, mediaItems.length);
   const next = useCallback(() => {
-    setCurrent((c) => (c + 1) % images.length);
-  }, [images.length]);
+    setCurrent((c) => (c + 1) % len);
+  }, [len]);
 
   useEffect(() => {
-    if (images.length <= 1) return;
+    if (mediaItems.length <= 1) return;
     const timer = setInterval(next, 5000);
     return () => clearInterval(timer);
-  }, [next, images.length]);
+  }, [next, mediaItems.length]);
 
   return (
     <section className={`relative flex ${height} items-center justify-center overflow-hidden`}>
-      {images.map((img, i) => (
-        <img
-          key={img.src}
-          src={img.src}
-          alt={img.alt}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
-            i === current ? "opacity-100" : "opacity-0"
-          }`}
-          loading={i === 0 ? "eager" : "lazy"}
-          width={1600}
-          height={900}
-        />
-      ))}
+      {mediaItems.map((item, i) =>
+        item.kind === "video" ? (
+          <video
+            key={item.src}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+              i === current ? "opacity-100" : "opacity-0"
+            }`}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-label={item.alt}
+          >
+            <source src={item.src} />
+          </video>
+        ) : (
+          <img
+            key={item.src}
+            src={item.src}
+            alt={item.alt}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+              i === current ? "opacity-100" : "opacity-0"
+            }`}
+            loading={i === 0 ? "eager" : "lazy"}
+            width={1600}
+            height={900}
+          />
+        )
+      )}
       <div className="absolute inset-0 bg-foreground/65" />
 
       <div className="container relative z-10 px-4 py-8 text-center sm:px-6 sm:py-[48px]">
@@ -57,9 +80,9 @@ const PageHeroSlider = ({
       </div>
 
       {/* Slider dots */}
-      {images.length > 1 && (
+      {mediaItems.length > 1 && (
         <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-[8px] sm:bottom-[24px]">
-          {images.map((_, i) => (
+          {mediaItems.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}

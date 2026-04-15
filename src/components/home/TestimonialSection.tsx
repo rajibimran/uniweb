@@ -1,27 +1,63 @@
 import { useState, useEffect, useCallback } from "react";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { testimonials, type Testimonial } from "@/data/mockData";
+import { testimonials as defaultTestimonials, type Testimonial } from "@/data/mockData";
+import { api, IS_STRAPI_CONFIGURED } from "@/lib/api";
 
-interface TestimonialSectionProps {
-  items?: Testimonial[];
-}
-
-const TestimonialSection = ({ items = testimonials }: TestimonialSectionProps) => {
+const TestimonialSection = () => {
+  const [items, setItems] = useState<Testimonial[] | null>(IS_STRAPI_CONFIGURED ? null : defaultTestimonials);
+  const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
   const [current, setCurrent] = useState(0);
 
-  const next = useCallback(() => {
-    setCurrent((c) => (c + 1) % items.length);
-  }, [items.length]);
-
-  const prev = useCallback(() => {
-    setCurrent((c) => (c - 1 + items.length) % items.length);
-  }, [items.length]);
+  useEffect(() => {
+    if (!IS_STRAPI_CONFIGURED) return;
+    let cancelled = false;
+    (async () => {
+      const list = await api.testimonials.getAll();
+      if (!cancelled) {
+        setItems(list);
+        setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
+    setCurrent(0);
+  }, [items]);
+
+  const next = useCallback(() => {
+    if (!items?.length) return;
+    setCurrent((c) => (c + 1) % items.length);
+  }, [items?.length]);
+
+  const prev = useCallback(() => {
+    if (!items?.length) return;
+    setCurrent((c) => (c - 1 + items.length) % items.length);
+  }, [items?.length]);
+
+  useEffect(() => {
+    if (!items?.length) return;
     const timer = setInterval(next, 5000);
     return () => clearInterval(timer);
-  }, [next]);
+  }, [next, items?.length]);
+
+  if (!ready || !items?.length) {
+    return (
+      <section className="py-10 sm:py-[64px]" aria-busy="true" aria-label="Loading testimonials">
+        <div className="container px-4 sm:px-6">
+          <div className="mx-auto mb-8 h-8 max-w-sm animate-pulse rounded-md bg-muted sm:mb-[48px]" />
+          <div className="mx-auto flex max-w-2xl flex-col items-center gap-4">
+            <div className="h-16 w-16 animate-pulse rounded-full bg-muted sm:h-[80px] sm:w-[80px]" />
+            <div className="h-4 w-full max-w-md animate-pulse rounded bg-muted" />
+            <div className="h-4 w-3/4 max-w-md animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const t = items[current];
 
@@ -37,14 +73,21 @@ const TestimonialSection = ({ items = testimonials }: TestimonialSectionProps) =
 
         <div className="mx-auto max-w-2xl">
           <div className="flex flex-col items-center text-center">
-            <img
-              src={t.photo}
-              alt={t.name}
-              className="h-16 w-16 rounded-full object-cover sm:h-[80px] sm:w-[80px]"
-              loading="lazy"
-              width={80}
-              height={80}
-            />
+            {t.photo ? (
+              <img
+                src={t.photo}
+                alt={t.name}
+                className="h-16 w-16 rounded-full object-cover sm:h-[80px] sm:w-[80px]"
+                loading="lazy"
+                width={80}
+                height={80}
+              />
+            ) : (
+              <div
+                className="h-16 w-16 rounded-full border border-border bg-muted sm:h-[80px] sm:w-[80px]"
+                aria-hidden
+              />
+            )}
             <div className="mt-3 flex gap-[4px] sm:mt-[16px]">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
@@ -59,7 +102,6 @@ const TestimonialSection = ({ items = testimonials }: TestimonialSectionProps) =
             <p className="mt-2 font-heading text-sm font-semibold text-foreground sm:mt-[8px]">{t.name}</p>
           </div>
 
-          {/* Controls */}
           <div className="mt-6 flex items-center justify-center gap-3 sm:mt-[32px] sm:gap-[16px]">
             <Button
               variant="outline"
@@ -75,9 +117,7 @@ const TestimonialSection = ({ items = testimonials }: TestimonialSectionProps) =
                 <button
                   key={i}
                   onClick={() => setCurrent(i)}
-                  className={`h-[8px] w-[8px] rounded-full transition-colors ${
-                    i === current ? "bg-primary" : "bg-border"
-                  }`}
+                  className={`h-[8px] w-[8px] rounded-full transition-colors ${i === current ? "bg-primary" : "bg-border"}`}
                   aria-label={`Go to testimonial ${i + 1}`}
                 />
               ))}

@@ -1,19 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, FileDown, ShieldCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useLocation } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
+import { SeoHelmet } from "@/components/seo/SeoHelmet";
+import { api, defaultReportPageConfig, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
 
-const heroImages = [
+const defaultReportHero: PageHero = {
+  page: "reports",
+  title: "Check Your Report",
+  subtitle: "Enter your Patient ID and registered phone number to access your medical report.",
+  slides: [
   { src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1600&h=900&fit=crop", alt: "Medical report analysis" },
   { src: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=1600&h=900&fit=crop", alt: "Health records management" },
-];
+  ],
+};
 
 interface ReportResult {
   patientName: string;
@@ -23,13 +31,30 @@ interface ReportResult {
 }
 
 const ReportCheck = () => {
-  useEffect(() => { document.title = "Check Report — Unicare Medical, Dhaka"; }, []);
+  const { pathname } = useLocation();
+  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultReportHero);
+  const [pageConfig, setPageConfig] = useState(IS_STRAPI_CONFIGURED ? null : defaultReportPageConfig);
   const [patientId, setPatientId] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [errors, setErrors] = useState<{ patientId?: string; phone?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState<ReportResult | null>(null);
   const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!IS_STRAPI_CONFIGURED) return;
+    let cancelled = false;
+    (async () => {
+      const [h, cfg] = await Promise.all([api.hero.getByPage("reports", defaultReportHero), api.reportPage.get()]);
+      if (!cancelled) {
+        setHero(h);
+        setPageConfig(cfg);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -68,9 +93,9 @@ const ReportCheck = () => {
         setNotFound(true);
       } else {
         setReport({
-          patientName: "Mohammad Rahman",
-          reportDate: "April 10, 2026",
-          status: "Completed",
+          patientName: pageConfig?.samplePatientName ?? defaultReportPageConfig.samplePatientName,
+          reportDate: pageConfig?.sampleReportDate ?? defaultReportPageConfig.sampleReportDate,
+          status: pageConfig?.sampleStatus ?? defaultReportPageConfig.sampleStatus,
           reportId: `RPT-${patientId.trim().toUpperCase()}-2026`,
         });
       }
@@ -83,10 +108,16 @@ const ReportCheck = () => {
 
   return (
     <Layout>
+      <SeoHelmet
+        layers={hero?.seo ? [hero.seo] : []}
+        fallbackTitle={`${hero?.title ?? "Check Report"} — Unicare Medical, Dhaka`}
+        fallbackDescription={hero?.subtitle ?? "Enter your Patient ID and registered phone number to access your medical report."}
+        pathForCanonical={pathname}
+      />
       <PageHeroSlider
-        images={heroImages}
-        title="Check Your Report"
-        subtitle="Enter your Patient ID and registered phone number to access your medical report."
+        images={hero?.slides ?? defaultReportHero.slides}
+        title={hero?.title ?? defaultReportHero.title}
+        subtitle={hero?.subtitle ?? defaultReportHero.subtitle}
       />
 
       <PageBreadcrumb items={[{ label: "Report Search" }]} />
@@ -192,7 +223,7 @@ const ReportCheck = () => {
             </div>
 
             <p className="mt-[16px] text-center font-body text-xs text-muted-foreground">
-              If you experience issues, please call <span className="font-semibold">+88 02 48316027</span> or visit our reception.
+              If you experience issues, please call <span className="font-semibold">{pageConfig?.supportPhone ?? defaultReportPageConfig.supportPhone}</span> or visit our reception.
             </p>
           </div>
         </div>

@@ -1,48 +1,163 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Play } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
-import { facilityImages } from "@/data/mockData";
+import { SeoHelmet } from "@/components/seo/SeoHelmet";
+import { RichText } from "@/components/content/RichText";
+import { api, defaultAboutPage, type AboutPageContent, type PageHero } from "@/lib/api";
 
-const heroImages = [
-  { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&h=900&fit=crop", alt: "Medical facility reception" },
-  { src: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=1600&h=900&fit=crop", alt: "Laboratory diagnostics" },
-  { src: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=1600&h=900&fit=crop", alt: "Patient examination room" },
-];
+const defaultAboutHero: PageHero = {
+  page: "about",
+  title: "About Us",
+  subtitle: "Delivering trusted, GCC-approved medical services in Dhaka.",
+  slides: [
+    { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&h=900&fit=crop", alt: "Medical facility reception" },
+    { src: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=1600&h=900&fit=crop", alt: "Laboratory diagnostics" },
+    { src: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=1600&h=900&fit=crop", alt: "Patient examination room" },
+  ],
+};
 
-interface AboutProps {
-  gallery?: { src: string; alt: string }[];
+function toYouTubeEmbedUrl(input?: string): string {
+  const raw = (input ?? "").trim();
+  if (!raw) return "";
+
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.replace(/^www\./i, "").toLowerCase();
+
+    if (host === "youtu.be") {
+      const id = url.pathname.split("/").filter(Boolean)[0] ?? "";
+      return id ? `https://www.youtube.com/embed/${id}` : "";
+    }
+
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      if (url.pathname === "/watch") {
+        const id = url.searchParams.get("v") ?? "";
+        return id ? `https://www.youtube.com/embed/${id}` : "";
+      }
+      if (url.pathname.startsWith("/embed/")) return raw;
+      if (url.pathname.startsWith("/shorts/")) {
+        const id = url.pathname.split("/").filter(Boolean)[1] ?? "";
+        return id ? `https://www.youtube.com/embed/${id}` : "";
+      }
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
 }
 
-const About = ({ gallery = facilityImages }: AboutProps) => {
-  useEffect(() => { document.title = "About Us — Unicare Medical, Dhaka"; }, []);
+const About = () => {
+  const { pathname } = useLocation();
+  const [content, setContent] = useState<AboutPageContent | null>(null);
+  const [hero, setHero] = useState<PageHero | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [aboutData, heroData] = await Promise.all([
+          api.about.get(),
+          api.hero.getByPage("about", defaultAboutHero),
+        ]);
+        if (!cancelled) {
+          setContent(aboutData);
+          setHero(heroData);
+        }
+      } catch {
+        if (!cancelled) {
+          setContent(defaultAboutPage);
+          setHero(defaultAboutHero);
+        }
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const aboutDesc =
+    content?.missionText?.slice(0, 180) ?? defaultAboutPage.missionText.slice(0, 180);
+  const virtualTourEmbedUrl = toYouTubeEmbedUrl(content?.virtualTourYoutubeUrl);
 
   return (
     <Layout>
-      <PageHeroSlider images={heroImages} title="About Us" subtitle="Delivering trusted, GCC-approved medical services in Dhaka.">
-        <div className="mt-[24px] flex flex-col items-center gap-[12px] sm:flex-row sm:justify-center">
-          <Link to="/book"><Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">Book Appointment</Button></Link>
-          <Link to="/services"><Button className="h-[48px] min-w-[200px] rounded-[4px] bg-secondary px-[24px] py-[12px] font-heading text-base font-semibold text-secondary-foreground shadow-md hover:bg-secondary/90">Our Services</Button></Link>
-        </div>
-      </PageHeroSlider>
+      <SeoHelmet
+        layers={ready && hero ? [hero.seo, content?.seo] : []}
+        fallbackTitle="About Us — Unicare Medical, Dhaka"
+        fallbackDescription={aboutDesc}
+        pathForCanonical={pathname}
+      />
+      {!ready || !hero ? (
+        <section
+          className="relative flex min-h-[400px] items-center justify-center bg-muted"
+          aria-busy="true"
+          aria-label="Loading"
+        >
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </section>
+      ) : (
+        <PageHeroSlider images={hero.slides} title={hero.title} subtitle={hero.subtitle}>
+          <div className="mt-[24px] flex flex-col items-center gap-[12px] sm:flex-row sm:justify-center">
+            <Link to="/book">
+              <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">
+                Book Appointment
+              </Button>
+            </Link>
+            <Link to="/services">
+              <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-secondary px-[24px] py-[12px] font-heading text-base font-semibold text-secondary-foreground shadow-md hover:bg-secondary/90">
+                Our Services
+              </Button>
+            </Link>
+          </div>
+        </PageHeroSlider>
+      )}
 
       <PageBreadcrumb items={[{ label: "About Us" }]} />
 
+      {!ready || !content ? (
+        <div className="container space-y-6 py-[48px]" aria-busy="true" aria-label="Loading content">
+          <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <div className="space-y-3">
+              <div className="h-4 w-full animate-pulse rounded bg-muted" />
+              <div className="h-4 w-full animate-pulse rounded bg-muted" />
+              <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+            </div>
+            <div className="aspect-[4/3] animate-pulse rounded-lg bg-muted" />
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-64 animate-pulse rounded-lg bg-muted" />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {ready && content ? (
+      <>
       {/* Mission */}
       <section className="py-[48px]">
         <div className="container">
           <div className="grid grid-cols-1 gap-[32px] lg:grid-cols-2 items-center">
             <div>
-              <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Our Mission</h2>
-              <p className="font-body text-base leading-relaxed text-muted-foreground">
-                At Unicare Medical, our mission is to provide accurate, efficient, and compassionate medical screening services that meet international standards. We are committed to helping individuals achieve their dreams of overseas employment through reliable health certification, while maintaining the highest levels of patient care and clinical excellence.
-              </p>
+              <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">{content.missionTitle}</h2>
+              <RichText value={content.missionText} />
             </div>
             <div className="rounded-lg overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop" alt="Medical team reviewing patient records" className="w-full h-auto object-cover" loading="lazy" />
+              <img
+                src={content.missionImage}
+                alt=""
+                className="w-full h-auto object-cover"
+                loading="lazy"
+              />
             </div>
           </div>
         </div>
@@ -53,13 +168,11 @@ const About = ({ gallery = facilityImages }: AboutProps) => {
         <div className="container">
           <div className="grid grid-cols-1 gap-[32px] lg:grid-cols-2 items-center">
             <div className="order-2 lg:order-1 rounded-lg overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?w=600&h=400&fit=crop" alt="Advanced laboratory equipment" className="w-full h-auto object-cover" loading="lazy" />
+              <img src={content.centerImage} alt="" className="w-full h-auto object-cover" loading="lazy" />
             </div>
             <div className="order-1 lg:order-2">
-              <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">Our Center</h2>
-              <p className="font-body text-base leading-relaxed text-muted-foreground">
-                Our diagnostic center is supervised by a team of highly qualified specialist doctors ensuring that every medical report is verified with professional clinical oversight. Our medical panel includes Medical Officers (Male & Female), Radiologists, and Consultant Pathologists — all dedicated to maintaining the highest standards of medical practice.
-              </p>
+              <h2 className="font-heading text-2xl font-bold text-foreground mb-[16px]">{content.centerTitle}</h2>
+              <RichText value={content.centerText} />
             </div>
           </div>
         </div>
@@ -69,14 +182,10 @@ const About = ({ gallery = facilityImages }: AboutProps) => {
       <section className="py-[48px]">
         <div className="container">
           <div className="text-center mb-[32px]">
-            <h2 className="font-heading text-2xl font-bold text-foreground">Why Choose Us</h2>
+            <h2 className="font-heading text-2xl font-bold text-foreground">{content.valuesSectionTitle}</h2>
           </div>
           <div className="grid grid-cols-1 gap-[24px] sm:grid-cols-3">
-            {[
-              { img: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=400&h=250&fit=crop", alt: "Precision diagnostics", title: "Precision", desc: "Automated systems minimize human error in chemical and biological analysis." },
-              { img: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&h=250&fit=crop", alt: "Fast processing", title: "Speed", desc: "High-throughput analyzers allow us to process thousands of samples daily." },
-              { img: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=400&h=250&fit=crop", alt: "Reliable results", title: "Reliability", desc: "Daily QC/Calibration and regular maintenance for consistency." },
-            ].map((v) => (
+            {content.values.map((v) => (
               <div key={v.title} className="rounded-lg border border-border bg-card p-[24px] text-center">
                 <img src={v.img} alt={v.alt} className="w-full h-[160px] object-cover rounded-lg mb-[16px]" loading="lazy" />
                 <h3 className="font-heading text-lg font-semibold text-foreground mb-[8px]">{v.title}</h3>
@@ -91,12 +200,12 @@ const About = ({ gallery = facilityImages }: AboutProps) => {
       <section className="bg-muted py-[48px]">
         <div className="container">
           <div className="text-center mb-[32px]">
-            <h2 className="font-heading text-2xl font-bold text-foreground">Facilities & Gallery</h2>
-            <p className="mt-[8px] font-body text-sm text-muted-foreground">Our center is designed to provide a clean, organized, and patient-friendly environment.</p>
+            <h2 className="font-heading text-2xl font-bold text-foreground">{content.facilityGalleryTitle}</h2>
+            <p className="mt-[8px] font-body text-sm text-muted-foreground">{content.facilityGallerySubtitle}</p>
           </div>
           <div className="columns-1 gap-[16px] sm:columns-2 lg:columns-3">
-            {gallery.map((img, i) => (
-              <div key={i} className="mb-[16px] break-inside-avoid overflow-hidden rounded-lg">
+            {content.gallery.map((img, i) => (
+              <div key={`${img.src}-${i}`} className="mb-[16px] break-inside-avoid overflow-hidden rounded-lg">
                 <img src={img.src} alt={img.alt} className="w-full object-cover transition-transform duration-300 hover:scale-105" loading="lazy" />
               </div>
             ))}
@@ -104,17 +213,31 @@ const About = ({ gallery = facilityImages }: AboutProps) => {
           <div className="mt-[32px]">
             <h3 className="font-heading text-xl font-bold text-foreground mb-[16px] text-center">Virtual Tour</h3>
             <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-lg bg-card border border-border flex items-center justify-center">
-              <div className="text-center">
-                <div className="mx-auto flex h-[64px] w-[64px] items-center justify-center rounded-full bg-primary/10 mb-[16px]">
-                  <Play className="h-[32px] w-[32px] text-primary" />
+              {virtualTourEmbedUrl ? (
+                <iframe
+                  src={virtualTourEmbedUrl}
+                  title="Virtual Tour"
+                  className="h-full w-full rounded-lg"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="text-center">
+                  <div className="mx-auto mb-[16px] flex h-[64px] w-[64px] items-center justify-center rounded-full bg-primary/10">
+                    <Play className="h-[32px] w-[32px] text-primary" />
+                  </div>
+                  <p className="font-heading text-base font-semibold text-foreground">Virtual Tour Coming Soon</p>
+                  <p className="mt-[4px] font-body text-sm text-muted-foreground">Add About Page YouTube URL in Strapi</p>
                 </div>
-                <p className="font-heading text-base font-semibold text-foreground">Virtual Tour Coming Soon</p>
-                <p className="mt-[4px] font-body text-sm text-muted-foreground">360° video iframe placeholder</p>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </section>
+      </>
+      ) : null}
     </Layout>
   );
 };

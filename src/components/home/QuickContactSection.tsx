@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
 
 const QuickContactSection = () => {
+  const { siteConfig } = useStrapiLayout();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -41,7 +43,7 @@ const QuickContactSection = () => {
                 </div>
                 <div>
                   <p className="font-heading text-xs font-semibold text-foreground sm:text-sm">Phone</p>
-                  <a href="tel:+880248316027" className="font-body text-xs text-muted-foreground hover:text-primary sm:text-sm">+88 02 48316027</a>
+                  <a href={`tel:${siteConfig.phone.replace(/[^\d+]/g, "")}`} className="font-body text-xs text-muted-foreground hover:text-primary sm:text-sm">{siteConfig.phone}</a>
                 </div>
               </div>
               <div className="flex items-center gap-3 sm:gap-[12px]">
@@ -50,7 +52,7 @@ const QuickContactSection = () => {
                 </div>
                 <div>
                   <p className="font-heading text-xs font-semibold text-foreground sm:text-sm">Email</p>
-                  <a href="mailto:unicaremedicalbd@gmail.com" className="font-body text-xs text-muted-foreground hover:text-primary sm:text-sm">unicaremedicalbd@gmail.com</a>
+                  <a href={`mailto:${siteConfig.email}`} className="font-body text-xs text-muted-foreground hover:text-primary sm:text-sm">{siteConfig.email}</a>
                 </div>
               </div>
               <div className="flex items-center gap-3 sm:gap-[12px]">
@@ -59,7 +61,7 @@ const QuickContactSection = () => {
                 </div>
                 <div>
                   <p className="font-heading text-xs font-semibold text-foreground sm:text-sm">Address</p>
-                  <p className="font-body text-xs text-muted-foreground sm:text-sm">13/1, New Eskaton Road (2nd Floor), Moghbazar, Dhaka</p>
+                  <p className="font-body text-xs text-muted-foreground sm:text-sm">{siteConfig.address}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 sm:gap-[12px]">
@@ -68,13 +70,13 @@ const QuickContactSection = () => {
                 </div>
                 <div>
                   <p className="font-heading text-xs font-semibold text-foreground sm:text-sm">Working Hours</p>
-                  <p className="font-body text-xs text-muted-foreground sm:text-sm">Sat–Thu: 8:00 AM – 8:00 PM</p>
+                  <p className="font-body text-xs text-muted-foreground sm:text-sm">{siteConfig.workingHours}</p>
                 </div>
               </div>
             </div>
             <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3652.0!2d90.4!3d23.75!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDQ1JzAwLjAiTiA5MMKwMjQnMDAuMCJF!5e0!3m2!1sen!2sbd!4v1"
+                src={siteConfig.googleMapsEmbed}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

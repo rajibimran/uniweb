@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { RichText } from "@/components/content/RichText";
+import { api, IS_STRAPI_CONFIGURED, type CountryGuideline } from "@/lib/api";
 import {
   FileText,
   AlertCircle,
@@ -11,20 +13,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-interface CountryData {
-  id: string;
-  name: string;
-  flag: string;
-  processingTime: string;
-  approvalNote: string;
-  expertTip: string;
-  mandatoryTests: string;
-  rejectionCriteria: string;
-  specialRules: string;
-  visaCategories: string;
-}
-
-const countries: CountryData[] = [
+const LOCAL_GUIDELINES_FALLBACK: CountryGuideline[] = [
   {
     id: "ksa",
     name: "Saudi Arabia",
@@ -130,8 +119,53 @@ const countries: CountryData[] = [
 ];
 
 const CountryGuidelinesSection = () => {
+  const [guidelines, setGuidelines] = useState<CountryGuideline[] | null>(
+    IS_STRAPI_CONFIGURED ? null : LOCAL_GUIDELINES_FALLBACK
+  );
+  const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
   const [activeCountry, setActiveCountry] = useState("ksa");
-  const country = countries.find((c) => c.id === activeCountry)!;
+
+  useEffect(() => {
+    if (!IS_STRAPI_CONFIGURED) return;
+    let cancelled = false;
+    (async () => {
+      const list = await api.countryGuidelines.getAll(LOCAL_GUIDELINES_FALLBACK);
+      if (!cancelled) {
+        setGuidelines(list);
+        setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!guidelines?.length) return;
+    if (!guidelines.some((c) => c.id === activeCountry)) {
+      setActiveCountry(guidelines[0].id);
+    }
+  }, [guidelines, activeCountry]);
+
+  if (!ready || !guidelines?.length) {
+    return (
+      <section className="bg-muted/50 py-8 sm:py-[48px]" aria-busy="true" aria-label="Loading country guidelines">
+        <div className="container px-4 sm:px-6">
+          <div className="mx-auto mb-6 h-8 max-w-md animate-pulse rounded-md bg-muted sm:mb-[40px]" />
+          <div className="mb-6 flex flex-wrap justify-center gap-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-10 w-24 animate-pulse rounded-full bg-muted" />
+            ))}
+          </div>
+          <div className="mx-auto max-w-5xl space-y-4">
+            <div className="h-64 animate-pulse rounded-lg bg-muted" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const country = guidelines.find((c) => c.id === activeCountry) ?? guidelines[0];
 
   return (
     <section className="py-8 sm:py-[48px] bg-muted/50">
@@ -150,7 +184,7 @@ const CountryGuidelinesSection = () => {
 
         {/* Country Tabs */}
         <div className="flex flex-wrap justify-center gap-2 mb-6 sm:mb-[32px] sm:gap-[8px]">
-          {countries.map((c) => (
+          {guidelines.map((c) => (
             <button
               key={c.id}
               onClick={() => setActiveCountry(c.id)}
@@ -219,9 +253,7 @@ const CountryGuidelinesSection = () => {
                     Expert Tip
                   </span>
                 </div>
-                <p className="font-body text-xs text-muted-foreground leading-relaxed sm:text-sm">
-                  {country.expertTip}
-                </p>
+                <RichText value={country.expertTip} className="[&_p]:text-xs sm:[&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed" />
               </div>
             </div>
 
@@ -235,9 +267,7 @@ const CountryGuidelinesSection = () => {
                     Mandatory Tests
                   </h4>
                 </div>
-                <p className="font-body text-xs text-muted-foreground leading-relaxed sm:text-sm">
-                  {country.mandatoryTests}
-                </p>
+                <RichText value={country.mandatoryTests} className="[&_p]:text-xs sm:[&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed" />
               </div>
 
               {/* Rejection Criteria */}
@@ -248,9 +278,7 @@ const CountryGuidelinesSection = () => {
                     Rejection Criteria
                   </h4>
                 </div>
-                <p className="font-body text-xs text-muted-foreground leading-relaxed sm:text-sm">
-                  {country.rejectionCriteria}
-                </p>
+                <RichText value={country.rejectionCriteria} className="[&_p]:text-xs sm:[&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed" />
               </div>
 
               {/* Special Rules */}
@@ -261,9 +289,7 @@ const CountryGuidelinesSection = () => {
                     Special Rules
                   </h4>
                 </div>
-                <p className="font-body text-xs text-muted-foreground leading-relaxed sm:text-sm">
-                  {country.specialRules}
-                </p>
+                <RichText value={country.specialRules} className="[&_p]:text-xs sm:[&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed" />
               </div>
 
               {/* Visa Categories */}
@@ -274,9 +300,7 @@ const CountryGuidelinesSection = () => {
                     Visa Categories
                   </h4>
                 </div>
-                <p className="font-body text-xs text-muted-foreground leading-relaxed sm:text-sm">
-                  {country.visaCategories}
-                </p>
+                <RichText value={country.visaCategories} className="[&_p]:text-xs sm:[&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed" />
               </div>
             </div>
           </div>
