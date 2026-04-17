@@ -95,7 +95,8 @@ Create each of these in **Strapi Admin → Content-Type Builder**. The frontend 
 | 4 | News Post | `news-post` | Collection | `api.news.getAll()` |
 | 5 | Blog Article | `article` | Collection | `api.blog.getAll()` |
 | 6 | Country Guideline | `country-guideline` | Collection | `api.countryGuidelines.getAll()` |
-| 7 | GCC Country | `gcc-country` | Collection | `api.gccCountries.getAll()` |
+| 7 | Country flag | `country-flag` | Collection | `api.countryFlags.getAll()` |
+| 7b | Region highlights section | `region-highlights-section` | Single Type | `api.regionHighlightsSection.get()` |
 | 8 | Equipment Item | `equipment-item` | Collection | `api.equipment.getAll()` |
 | 9 | Fitness Criteria | `fitness-criteria` | Collection | `api.fitnessCriteria.getAll()` |
 | 10 | Stat | `stat` | Collection | `api.stats.getAll()` |
@@ -128,7 +129,7 @@ The production Strapi app for this frontend lives in **`backend/`** (not a separ
 | **Header** | Logo, menu items, menu order, dropdown items | Site Config + Navigation |
 | **Hero Sections** | Title (H1), subtitle, slider images, optional **promo video (Media)**, CTA buttons | Hero |
 | **Services Section** | Service titles, descriptions, icons, images, detail pages | Service |
-| **GCC Countries** | Country names, flag images (Media), display order | GCC Country |
+| **Country flags** | Country names, flag images (Media), display order | Country flag |
 | **Country Guidelines** | Tab content, **flag (Media)**, processing time, tips, visa text | Country Guideline |
 | **Stats** | Numbers, labels, suffixes | Stat |
 | **Service Packages** | Package names, features, pricing | Service Package |
@@ -277,7 +278,7 @@ Use **both** a sensible pixel size and a **compressed file size**. Targets below
 | About mission / center | 900 × 600 px | **≤ 150 KB** | WebP or JPEG |
 | About value cards / facility gallery | 640 × 400 px | **≤ 80–120 KB** each | WebP or JPEG |
 | Testimonial photo | 256–400 px square | **≤ 60–100 KB** | WebP or JPEG |
-| Country / GCC flags | 80–160 px wide | **≤ 30–50 KB** | PNG or WebP (flat graphics) |
+| Country / region flags | 80–160 px wide | **≤ 30–50 KB** | PNG or WebP (flat graphics) |
 | Certification logos | width ~120–200 px | **≤ 40–60 KB** each | SVG (best) or PNG |
 | Site logo | ≤ 400 px wide | **≤ 50–80 KB** | SVG or PNG |
 | Equipment photos | 800 × 600 px | **≤ 120 KB** | WebP or JPEG |
@@ -311,7 +312,7 @@ Editors should **upload** assets in Strapi; do **not** paste external image URLs
 |---|---|---|
 | Site Config | `logo` | Media (single); images or files |
 | Country Guideline | `flag` | Media (single), images only |
-| GCC Country | `flag` | Media (single), images only |
+| Country flag | `flag` | Media (single), images only |
 | Certification | `logo` | Media (single), images only, optional |
 | Gallery Image | `image` | Media (single), images only, required |
 | Service | `heroImage`, `cardImage` | Media (single), images |
@@ -337,7 +338,7 @@ Editors should **upload** assets in Strapi; do **not** paste external image URLs
 On startup, `backend/src/index.ts` calls **`grantPublicContentApis`** (`backend/src/bootstrap/public-permissions.ts`). It adds **Users & Permissions → Public** actions if they are missing:
 
 - **Single types** — only **`find`**:  
-  `api::site-config.site-config`, `api::about-page.about-page`
+  `api::site-config.site-config`, `api::region-highlights-section.region-highlights-section`, `api::about-page.about-page`, and other `*-page` singles — see `backend/src/bootstrap/public-permissions.ts` for the full list.
 - **Collection types** — **`find`** and **`findOne`** for:
 
 | API (REST path uses plural `pluralName`) | Strapi UID (internal) |
@@ -346,7 +347,11 @@ On startup, `backend/src/index.ts` calls **`grantPublicContentApis`** (`backend/
 | `/api/news-posts` | `api::news-post.news-post` |
 | `/api/articles` | `api::article.article` |
 | `/api/country-guidelines` | `api::country-guideline.country-guideline` |
-| `/api/gcc-countries` | `api::gcc-country.gcc-country` |
+| `/api/country-flags` | `api::country-flag.country-flag` |
+| `/api/products` | `api::product.product` |
+| `/api/team-members` | `api::team-member.team-member` |
+| `/api/resource-items` | `api::resource-item.resource-item` |
+| `/api/locations` | `api::location.location` |
 | `/api/equipment-items` | `api::equipment-item.equipment-item` |
 | **`/api/fitness-criteria`** | **`api::fitness-criterion.fitness-criterion`** (singular type name; plural **route** is correct) |
 | `/api/stats` | `api::stat.stat` |
@@ -360,7 +365,7 @@ On startup, `backend/src/index.ts` calls **`grantPublicContentApis`** (`backend/
 | `/api/heroes` | `api::hero.hero` |
 | `/api/services` | `api::service.service` |
 
-So for collections, both **list** and **single-document** reads work for anonymous users, including country guidelines and GCC countries (the older manual table that omitted `findOne` for some types was wrong for this codebase).
+So for collections, both **list** and **single-document** reads work for anonymous users, including country guidelines and country flags (the older manual table that omitted `findOne` for some types was wrong for this codebase).
 
 ### 9.2 Manual check in Admin (optional)
 
@@ -696,7 +701,7 @@ File: **`backend/src/bootstrap/phased-content-seed.ts`**. Seeds demo content (in
 | Phase | Typical contents |
 |---|---|
 | `layout` (default if unset) | Site config + logo, navigation, footer links, certifications |
-| `home` | Stats, GCC countries, testimonials, packages, gallery, FAQs, country guidelines, home hero |
+| `home` | Stats, country flags, region highlights section, testimonials, packages, gallery, FAQs, country guidelines, home hero |
 | `services` | Four services (with images), services hero, related services (best-effort) |
 | `about` | About page + mission/center media + about hero |
 | `contact` | Contact hero |

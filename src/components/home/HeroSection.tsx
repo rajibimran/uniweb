@@ -11,9 +11,24 @@ const defaultHomeHero: PageHero = {
   subtitle:
     "Trusted for comprehensive health screening, medical checkups, and overseas employment certification in Dhaka, Bangladesh.",
   slides: [
-    { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&h=900&fit=crop", alt: "Professional medical facility interior" },
-    { src: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=1600&h=900&fit=crop", alt: "Modern diagnostic laboratory" },
-    { src: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=1600&h=900&fit=crop", alt: "Medical consultation room" },
+    {
+      src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&h=900&fit=crop",
+      alt: "Professional medical facility interior",
+      title: "GCC Approved Medical Center",
+      text: "Trusted for comprehensive health screening, medical checkups, and overseas employment certification in Dhaka, Bangladesh.",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=1600&h=900&fit=crop",
+      alt: "Modern diagnostic laboratory",
+      title: "Advanced diagnostics",
+      text: "Digital imaging and accredited laboratory testing to meet GCC medical standards.",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=1600&h=900&fit=crop",
+      alt: "Medical consultation room",
+      title: "Patient-centered care",
+      text: "Experienced staff guiding you through every step of screening and certification.",
+    },
   ],
 };
 

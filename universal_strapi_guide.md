@@ -1,7 +1,10 @@
 Universal Strapi Backend Guide (v5-first, v4-tolerant)
 One backend contract for many frontend designs
-Version: 1.1  
+Version: 1.2  
 Scope: Marketing/corporate/service websites with reusable sections/pages across different frontend designs (Lovable, React, Next, Nuxt, Astro, custom).
+
+**Changelog 1.2 (uniweb reference backend)**  
+Neutral region strip: **`country-flag`** (collection) and **`region-highlights-section`** (single) replace legacy GCC-specific API IDs. Optional catalog-style types **`product`**, **`team-member`**, **`resource-item`**, **`location`** ship in `backend/` with draft/publish. See **§21–§24** for field lists, which REST path to call per UI section, and roadmap. **Editors:** use **`docs/FRONTEND_STRAPI_MAINTENANCE_MAP.md`** in the **uniweb** frontend repo for page/section → Strapi screen mapping.
 ---
 1) Goal and philosophy
 Build a design-agnostic Strapi backend where:
@@ -61,6 +64,12 @@ Field	Type	Required	Notes
 `instagramUrl`	string	no	Social
 `linkedinUrl`	string	no	Social
 `defaultSeo`	component `seo.entry` (single)	no	Global SEO defaults
+`region-highlights-section`
+Purpose: optional home (or landing) **banner strip** above a **country-flag** row or similar; frontend should hide the block until image + title + description exist and are published.
+Field	Type	Required	Notes
+`bannerImage`	media (single, images)	no	Wide banner
+`bannerTitle`	string	no	Overlay headline
+`bannerDescription`	text	no	Supporting copy
 `about-page`
 Purpose: reusable About content
 Field	Type	Required	Notes
@@ -88,13 +97,18 @@ Field	Type	Required	Notes
 `stat`
 `service-package`
 `country-guideline`
-`global-country`
+`country-flag`
 `equipment-item`
 `fitness-criterion`
 `certification`
 `gallery-image`
 `footer-quick-link`
 `footer-service-link`
+`country-flag` (optional region / selector strip)
+Field	Type	Required	Notes
+`name`	string	yes	Display label (e.g. country or region name)
+`flag`	media (single, images)	yes	Small flag or badge image
+`order`	integer	no	Sort order
 Review note
 The existing list already covers a strong core for service/corporate websites. However, not all collection types should be treated as universal core types. Some are generic across industries, while others are domain-specific and should be treated as extension modules to avoid polluting the shared base contract.[web:79][web:85]
 Recommended universal core collections
@@ -114,7 +128,7 @@ Recommended domain-extension collections
 These can remain in the project where needed, but should be classified internally as industry-specific extensions rather than universal minimum types:
 `service-package`
 `country-guideline`
-`global-country`
+`country-flag`
 `equipment-item`
 `fitness-criterion`
 `certification`
@@ -311,7 +325,7 @@ For resource hubs, keep downloads and content-hub items in a separate `resource-
 6) Media policy (mandatory)
 All visuals must be uploaded and managed via Strapi Media Library:
 Icons: media field (`iconImage`) not URL
-Hero slides: media multiple
+Hero slides: repeatable component **`hero.slide`** (`image` media required, `title`, `text`); not a flat multi-media field.
 Hero promo video: media single (videos)
 OG images: media field in `seo.entry`
 Service/about/news/blog/testimonial/equipment/gallery/flags/logos: media fields
@@ -324,8 +338,14 @@ string URL fields like `imageUrl`, `srcUrl`, `iconUrl`, `videoUrl` for primary a
 Use these endpoint patterns for frontend consumers:
 `GET /api/site-config?populate=*`
 `GET /api/about-page?populate=*`
+`GET /api/services-page?populate=*`
+`GET /api/booking-page?populate=*`
+`GET /api/report-page?populate=*`
+`GET /api/screening-process-page?populate=*`
+`GET /api/privacy-page?populate=sections&populate[seo][populate]=openGraphImage`
 `GET /api/navigations?populate=*&sort=order:asc`
-`GET /api/heroes?filters[page][$eq]={page}&populate=*`
+`GET /api/heroes?filters[page][$eq]={page}&populate=*`  
+For **per-slide images and copy**, Strapi v5 often needs explicit nested populate on `slideItems.image` (see `frontend/src/lib/api.ts` `HERO_POPULATE` in the uniweb repo); `populate=*` alone may omit nested media.
 `GET /api/services?populate=*&sort=order:asc`
 `GET /api/services?filters[slug][$eq]={slug}&populate=*`
 `GET /api/news-posts?populate=*&sort=date:desc`
@@ -335,7 +355,8 @@ Use these endpoint patterns for frontend consumers:
 `GET /api/stats?populate=*&sort=order:asc`
 `GET /api/service-packages?populate=*&sort=order:asc`
 `GET /api/country-guidelines?populate=*`
-`GET /api/gcc-countries?populate=*&sort=order:asc`
+`GET /api/country-flags?populate=*&sort=order:asc`
+`GET /api/region-highlights-section?populate[bannerImage][fields][0]=url&populate[bannerImage][fields][1]=name&populate[bannerImage][fields][2]=alternativeText`
 `GET /api/equipment-items?populate=*&sort=order:asc`
 `GET /api/fitness-criteria?populate=*&sort=order:asc`
 `GET /api/certifications?populate=*&sort=order:asc`
@@ -393,7 +414,7 @@ Critical examples:
 `heroes`, `services`, `articles`, `news-posts`
 `navigations`, footer links, certifications
 `stats`, `faqs`, `testimonials`
-`country-guidelines`, `gcc-countries`
+`country-guidelines`, `country-flags`, `region-highlights-section`
 `equipment-items`, `fitness-criteria`, `gallery-images`
 `resource-items`, `team-members`, `locations`, `products` only if those extensions are enabled
 Never enable public mutation actions.
@@ -566,8 +587,9 @@ Create a Strapi v5 backend implementation based on the following blueprint:
 - universal, design-agnostic backend for multi-frontend websites
 - v5-first, v4-tolerant frontend integration
 - semantic content only, no style-specific fields
-- shared global single types: site-config, about-page
-- shared collection types: navigation, hero, service, news-post, article, faq, testimonial, stat, service-package, country-guideline, global-country, equipment-item, fitness-criterion, certification, gallery-image, footer-quick-link, footer-service-link
+- shared global single types: site-config, about-page, region-highlights-section, plus page singles as needed (services-page, booking-page, report-page, screening-process-page, privacy-page)
+- shared collection types: navigation, hero, service, news-post, article, faq, testimonial, stat, service-package, country-guideline, country-flag, equipment-item, fitness-criterion, certification, gallery-image, footer-quick-link, footer-service-link
+- shared single types include: site-config, about-page, region-highlights-section, and page singles (services-page, booking-page, report-page, screening-process-page, privacy-page) as used by the project
 - optional extensions: resource-item, team-member, location, product
 - optional industry modules for medical, hospital, recruitment, travel, and manufacturing
 - shared SEO component: seo.entry with metadata, canonicalPath, openGraphImage, twitterCard, structuredData, noIndex, snippetForAiOverview
@@ -595,3 +617,157 @@ Use a read-only API token for frontend consumption and send it as:
 Authorization: Bearer <token>
 ```
 Keep admin credentials private, and never allow public mutation actions.
+
+---
+## 21) Uniweb `backend/` — content types, REST paths, and fields
+
+**Convention:** Strapi REST uses **`pluralName`** in the path (`/api/{plural}`). Single types use the singular API id (e.g. `/api/site-config`). All listed types use **`draftAndPublish: true`** unless noted. **`seo.entry`** fields: `metaTitle`, `metaDescription`, `metaKeywords`, `canonicalPath`, `openGraphImage`, `openGraphImageAlt`, `twitterCard`, `structuredData`, `noIndex`, `snippetForAiOverview`.
+
+### 21.1 Master index (call from frontend)
+
+| Strapi UID | REST list / read | Kind | Purpose |
+|------------|------------------|------|---------|
+| `api::site-config.site-config` | `GET /api/site-config` | Single | Branding, contact, social URLs, `defaultSeo` |
+| `api::navigation.navigation` | `GET /api/navigations` | Collection | Menu (`label`, `href`, `order`, parent/children relation) |
+| `api::hero.hero` | `GET /api/heroes?filters[page][$eq]=…` | Collection | Per-route hero (`page` unique string) |
+| `api::service.service` | `GET /api/services` | Collection | Service cards + detail (`slug`) |
+| `api::article.article` | `GET /api/articles` | Collection | Blog |
+| `api::news-post.news-post` | `GET /api/news-posts` | Collection | News |
+| `api::faq.faq` | `GET /api/faqs` | Collection | FAQ list |
+| `api::testimonial.testimonial` | `GET /api/testimonials` | Collection | Quotes |
+| `api::stat.stat` | `GET /api/stats` | Collection | Numeric highlights |
+| `api::service-package.service-package` | `GET /api/service-packages` | Collection | Package cards |
+| `api::country-guideline.country-guideline` | `GET /api/country-guidelines` | Collection | Country-specific guideline rows |
+| `api::country-flag.country-flag` | `GET /api/country-flags` | Collection | Name + flag + order (region strip) |
+| `api::region-highlights-section.region-highlights-section` | `GET /api/region-highlights-section` | Single | Banner strip + depends on `country-flags` in UI |
+| `api::equipment-item.equipment-item` | `GET /api/equipment-items` | Collection | Equipment table |
+| `api::fitness-criterion.fitness-criterion` | `GET /api/fitness-criteria` | Collection | Fitness categories + JSON `items` |
+| `api::certification.certification` | `GET /api/certifications` | Collection | Partner/accreditation logos |
+| `api::gallery-image.gallery-image` | `GET /api/gallery-images` | Collection | Image + alt + order |
+| `api::footer-quick-link.footer-quick-link` | `GET /api/footer-quick-links` | Collection | Footer column links |
+| `api::footer-service-link.footer-service-link` | `GET /api/footer-service-links` | Collection | Footer service links |
+| `api::about-page.about-page` | `GET /api/about-page` | Single | Mission/center/values/gallery/YouTube + `seo` |
+| `api::services-page.services-page` | `GET /api/services-page` | Single | `categories` JSON + `comparisonRows` component |
+| `api::booking-page.booking-page` | `GET /api/booking-page` | Single | `timeSlots` JSON + `seo` |
+| `api::report-page.report-page` | `GET /api/report-page` | Single | Sample report hints + `seo` |
+| `api::screening-process-page.screening-process-page` | `GET /api/screening-process-page` | Single | Checklist + `steps` component + `seo` |
+| `api::privacy-page.privacy-page` | `GET /api/privacy-page` | Single | `title`, repeatable `privacy.section`, `seo` |
+| `api::product.product` | `GET /api/products` | Collection | Catalog / portfolio (optional site) |
+| `api::team-member.team-member` | `GET /api/team-members` | Collection | Team grid (optional site) |
+| `api::resource-item.resource-item` | `GET /api/resource-items` | Collection | Downloads / resource hub (optional site) |
+| `api::location.location` | `GET /api/locations` | Collection | Branches / offices (optional site) |
+
+### 21.2 Field lists (schemas in `backend/src/api/.../schema.json`)
+
+**`site-config`:** `siteName`, `tagline`, `logo` (media), `phone`, `email`, `address`, `workingHours`, `googleMapsEmbed`, `facebookUrl`, `instagramUrl`, `linkedinUrl`, `defaultSeo` (component).
+
+**`navigation`:** `label`, `href`, `order`, `parent` / `children` (self-relation).
+
+**`hero`:** `page` (string, unique), `title`, `subtitle`, `slideItems` (repeatable **`hero.slide`**: `image` media, `title`, `text`), `ctaButtons` (**`hero.cta-button`**: `label`, `href`, `variant`), `promoVideo` (media video), `seo`.
+
+**`service`:** `title`, `slug`, `icon`, `iconImage`, `description`, `category` (enum: Examination, Imaging, Laboratory, Preventive), `heroImage`, `cardImage`, `fullDescription` (richtext), `benefits` / `tests` (**`service.simple-line`**: `text`), `pricing` (**`service.pricing-row`**), `timeline` (**`service.timeline-step`**), `documents` (**`service.document-item`**), `relatedServices` / `inverseRelatedServices` (M2M), `seo`.
+
+**`article`:** `title`, `slug`, `excerpt`, `content`, `image`, `date`, `category` (Guide, Tips, Education, Technology), `seo`.
+
+**`news-post`:** same shape as article; `category` enum: Announcement, Equipment, Regulation, Notice, Guide.
+
+**`faq`:** `question`, `answer`, `order`.
+
+**`testimonial`:** `name`, `photo`, `rating` (1–5), `quote`, `order`.
+
+**`stat`:** `label`, `value`, `suffix`, `order`.
+
+**`service-package`:** `title`, `description`, `features` (JSON), `pricing`, `order`.
+
+**`country-guideline`:** `name`, `countryId`, `flag`, `processingTime`, `approvalNote`, `expertTip`, `mandatoryTests`, `rejectionCriteria`, `specialRules`, `visaCategories`.
+
+**`country-flag`:** `name`, `flag` (media), `order`.
+
+**`region-highlights-section`:** `bannerImage`, `bannerTitle`, `bannerDescription`.
+
+**`equipment-item`:** `slNo`, `name`, `model`, `qty`, `origin`, `status`, `image`.
+
+**`fitness-criterion`:** `category`, `description`, `items` (JSON).
+
+**`certification`:** `name`, `logo`, `order`.
+
+**`gallery-image`:** `image`, `alt`, `order`.
+
+**`footer-quick-link` / `footer-service-link`:** `label`, `href`, `order`.
+
+**`about-page`:** `missionTitle`, `missionText`, `missionImage`, `centerTitle`, `centerText`, `centerImage`, `valuesSectionTitle`, `values` (**`about.value-item`**), `facilityGalleryTitle`, `facilityGallerySubtitle`, `gallery` (**`about.gallery-item`**), `virtualTourYoutubeUrl`, `seo`.
+
+**`services-page`:** `categories` (JSON), `comparisonRows` (**`services.comparison-row`**).
+
+**`booking-page`:** `timeSlots` (JSON), `seo`.
+
+**`report-page`:** `samplePatientName`, `sampleReportDate`, `sampleStatus`, `supportPhone`, `seo`.
+
+**`screening-process-page`:** `checklistTitle`, `checklistDescription`, `totalTimeLabel`, `steps` (**`screening.process-step`**), `seo`.
+
+**`privacy-page`:** `title`, `sections` (**`privacy.section`**: `heading`, `body`), `seo`.
+
+**`product`:** `name`, `slug`, `summary`, `description` (richtext), `featuredImage`, `gallery`, `brochureFile`, `specificationFile`, `categoryLabel`, `order`, `seo`.
+
+**`team-member`:** `name`, `slug`, `designation`, `bio`, `photo`, `email`, `linkedinUrl`, `order`, `seo`.
+
+**`resource-item`:** `title`, `slug`, `resourceType` (enum), `summary`, `content`, `featuredImage`, `downloadFile`, `externalUrl`, `publishDate`, `categoryLabel`, `isFeatured`, `order`, `seo`.
+
+**`location`:** `name`, `slug`, `address`, `phone`, `email`, `googleMapsEmbed`, `workingHours`, `heroImage`, `order`, `seo`.
+
+---
+## 22) Uniweb `frontend/src` — which `api.*` helper matches which UI
+
+Normalized fetch layer: **`frontend/src/lib/api.ts`**. Layout bootstrap: **`StrapiLayoutContext.tsx`** (`siteConfig`, `navigation`, footer links, certifications).
+
+| UI location | Source file(s) | Strapi / API |
+|-------------|----------------|--------------|
+| Header (logo, phone, nav) | `components/layout/Header.tsx` | `site-config`, `navigation` (via context) |
+| Footer | `components/layout/Footer.tsx` | `site-config`, `footer-quick-link`, `footer-service-link`, `certification` (via context) |
+| Home hero | `components/home/HeroSection.tsx` | `api.hero.getByPage("home", …)` → **`heroes`** |
+| Home services grid | `components/home/ServicesSection.tsx` | `api.services.getAll()` → **`services`** |
+| Home region banner + flags | `components/home/RegionHighlightsSection.tsx` | `api.regionHighlightsSection.get()` + `api.countryFlags.getAll()` |
+| Home trust / stats / packages / certs strip | `components/home/TrustSection.tsx` | `api.stats`, `api.servicePackages`, `api.certifications` |
+| Home country guidelines | `components/home/CountryGuidelinesSection.tsx` | `api.countryGuidelines` → **`country-guidelines`** |
+| Home “Get in touch” | `components/home/QuickContactSection.tsx` | **`site-config`** (contact fields only; form is not Strapi-backed) |
+| Services page | `pages/Services.tsx` | `services`, `faqs`, `services-page`, `hero` page `services` |
+| Service detail | `pages/ServiceDetail.tsx` | `services` (+ `hero` if you add it) |
+| About | `pages/About.tsx` | `about-page`, `hero` page `about` |
+| Blog list / post | `pages/Blog.tsx`, `BlogPost.tsx` | `articles`, `hero` page `blog` |
+| News list / post | `pages/News.tsx`, `NewsPost.tsx` | `news-posts`, `hero` page `news` |
+| Book appointment | `pages/BookAppointment.tsx` | `booking-page`, `services`, `hero` page `book` |
+| Report check | `pages/ReportCheck.tsx` | `report-page`, `hero` page `reports` |
+| Screening process | `pages/ScreeningProcess.tsx` | `screening-process-page`, `hero` page `process` |
+| Contact | `pages/Contact.tsx` | `services`, `hero` page `contact` |
+| Fitness | `pages/FitnessPage.tsx` | `fitness-criteria`, `hero` page `fitness` |
+| Equipment | `pages/EquipmentPage.tsx` | `equipment-items`, `hero` page `equipment` |
+| Privacy | `pages/Privacy.tsx` | `privacy-page` |
+| **Not wired in this SPA yet** | — | Use REST for **`products`**, **`team-members`**, **`resource-items`**, **`locations`** when you add pages/sections. |
+
+**`hero.page` values used today:** `home`, `services`, `about`, `blog`, `news`, `book`, `reports`, `process`, `contact`, `fitness`, `equipment` (see `api.ts` defaults and each page’s `getByPage` call).
+
+---
+## 23) Editor / maintainer quick reference
+
+For non-developers: **`docs/FRONTEND_STRAPI_MAINTENANCE_MAP.md`** in the **uniweb** repo maps **each website page and section** to the **Strapi Content Manager** entry to edit. Keep that file updated when you add routes or sections.
+
+---
+## 24) Gaps, issues, and next steps (universal backend roadmap)
+
+**Current limitations / debt**
+
+- **Service `category` enum** is medical-specific; for a truly universal template, consider string or a small `service-category` collection.
+- **JSON fields** (`service-package.features`, `fitness-criterion.items`, `services-page.categories`, `booking-page.timeSlots`) are powerful but error-prone for editors; prefer repeatable components where possible.
+- **Optional types** (`product`, `team-member`, `resource-item`, `location`) have no first-class sections in the sample `frontend` yet—only REST + permissions; add `api.ts` helpers when you standardize list/detail shapes.
+- **Hero `page` is a free string**; typos hide content. Consider enum or guarded seed list.
+- **`masterstrapi/`** folder may still use older IDs (`gcc-country`); align or treat as legacy snapshot.
+- **Breaking renames** (`gcc-*` → neutral) require new DB or migration for existing deployments.
+
+**Recommended next steps**
+
+1. Add **typed API helpers** in `frontend/src/lib/api.ts` for `products`, `team-members`, `resource-items`, `locations` (list + by slug) with shared `populate` constants.
+2. Replace remaining **domain-specific** copy in seeds with neutral placeholders per vertical.
+3. Publish **`FRONTEND_STRAPI_MAINTENANCE_MAP.md`** to your internal wiki and link from Strapi Admin custom dashboard (optional).
+4. Add **OpenAPI or static JSON contract** export from Strapi (plugin or generated) for Lovable/Cursor consumers.
+5. **i18n**: enable only on types that need translation; document locale in the maintenance map.
+6. **E-commerce**: keep out of this template; if needed, use a dedicated shop module or external commerce API.

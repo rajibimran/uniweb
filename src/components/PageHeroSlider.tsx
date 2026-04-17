@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 
+type HeroImageItem = { src: string; alt: string; title?: string; text?: string; kind?: "image" };
+
 interface PageHeroSliderProps {
-  images: { src: string; alt: string }[];
+  images: HeroImageItem[];
+  /** Fallback headline when a slide has no `title` (and for promo video). */
   title: string;
+  /** Fallback subcopy when a slide has no `text`. */
   subtitle?: string;
   children?: React.ReactNode;
   height?: string;
@@ -19,8 +23,19 @@ const PageHeroSlider = ({
 }: PageHeroSliderProps) => {
   const [current, setCurrent] = useState(0);
   const mediaItems = promoVideoUrl
-    ? [...images, { src: promoVideoUrl, alt: "Promotional video", kind: "video" as const }]
+    ? [...images.map((img) => ({ ...img, kind: "image" as const })), { src: promoVideoUrl, alt: "Promotional video", kind: "video" as const }]
     : images.map((img) => ({ ...img, kind: "image" as const }));
+
+  const overlay = (() => {
+    const item = mediaItems[current];
+    if (!item) return { headline: title, sub: subtitle };
+    if ("kind" in item && item.kind === "video") return { headline: title, sub: subtitle };
+    const img = item as HeroImageItem;
+    return {
+      headline: img.title?.trim() || title,
+      sub: img.text?.trim() || subtitle,
+    };
+  })();
 
   const len = Math.max(1, mediaItems.length);
   const next = useCallback(() => {
@@ -69,11 +84,11 @@ const PageHeroSlider = ({
 
       <div className="container relative z-10 px-4 py-8 text-center sm:px-6 sm:py-[48px]">
         <h1 className="font-heading text-3xl font-extrabold leading-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
-          {title}
+          {overlay.headline}
         </h1>
-        {subtitle && (
+        {overlay.sub && (
           <p className="mx-auto mt-3 max-w-2xl font-body text-base leading-relaxed text-white/90 sm:mt-[16px] sm:text-lg">
-            {subtitle}
+            {overlay.sub}
           </p>
         )}
         {children}

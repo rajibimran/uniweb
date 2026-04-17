@@ -244,6 +244,47 @@ function mapMediaListToSlides(mediaField: unknown): { src: string; alt: string }
   return slides;
 }
 
+/** Repeatable components may be a plain array or `{ data: [...] }` (Strapi v5). */
+function unwrapComponentRepeatable(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object" && "data" in (raw as object)) {
+    const d = (raw as { data: unknown }).data;
+    if (Array.isArray(d)) return d;
+    if (d != null) return [d];
+  }
+  return [];
+}
+
+/** Strapi `hero.slide` repeatable: image + title + text per carousel slide. */
+function mapSlideItemsToHeroSlides(
+  slideItemsField: unknown,
+  fallbackTitle: string,
+  fallbackSubtitle: string
+): HeroSlide[] {
+  const rows = normalizeComponentList(unwrapComponentRepeatable(slideItemsField));
+  const out: HeroSlide[] = [];
+  for (const row of rows) {
+    const url = resolveMediaToAbsolute(row.image);
+    if (!url) continue;
+    const mediaFlat = flattenStrapiEntity(row.image) ?? {};
+    const altFromMedia = String(
+      (mediaFlat.alternativeText as string | undefined) ??
+        (mediaFlat.caption as string | undefined) ??
+        (mediaFlat.name as string | undefined) ??
+        ""
+    );
+    const slideTitle = String(row.title ?? "").trim();
+    const slideText = String(row.text ?? "").trim();
+    out.push({
+      src: url,
+      alt: altFromMedia || slideTitle || fallbackTitle,
+      ...(slideTitle ? { title: slideTitle } : {}),
+      ...(slideText ? { text: slideText } : {}),
+    });
+  }
+  return out;
+}
+
 function mapCtaButtons(raw: unknown): PageHero["ctaButtons"] {
   const rows = normalizeComponentList(raw);
   if (rows.length === 0) return undefined;
@@ -321,15 +362,28 @@ function mapPageHero(raw: unknown, fallback: PageHero): PageHero {
   const first = list[0];
   if (!first) return fallback;
 
-  const slides = mapMediaListToSlides(first.slides);
+  const rootTitle = String(first.title ?? fallback.title);
+  const rootSubtitle = String(first.subtitle ?? fallback.subtitle);
+
+  const fromSlideItems = mapSlideItemsToHeroSlides(first.slideItems, rootTitle, rootSubtitle);
+  const legacyMediaSlides =
+    fromSlideItems.length === 0 ? mapMediaListToSlides((first as Record<string, unknown>).slides) : [];
+
+  const slides =
+    fromSlideItems.length > 0
+      ? fromSlideItems
+      : legacyMediaSlides.length > 0
+        ? legacyMediaSlides
+        : fallback.slides;
+
   const ctas = mapCtaButtons(first.ctaButtons);
   const promoVideoUrl = resolveMediaToAbsolute(first.promoVideo) ?? "";
 
   return {
     page: String(first.page ?? fallback.page),
-    title: String(first.title ?? fallback.title),
-    subtitle: String(first.subtitle ?? fallback.subtitle),
-    slides: slides.length > 0 ? slides : fallback.slides,
+    title: rootTitle,
+    subtitle: rootSubtitle,
+    slides,
     ctaButtons: ctas ?? fallback.ctaButtons,
     ...(promoVideoUrl ? { promoVideoUrl } : {}),
     seo: mapPageSeo(first.seo) ?? fallback.seo,
@@ -671,7 +725,7 @@ function mapFAQItems(raw: unknown, fallback: FAQItem[]): FAQItem[] {
   return rows.length ? rows.map(({ question, answer }) => ({ question, answer })) : fallback;
 }
 
-function mapGCCCountryList(raw: unknown, fallback: GCCCountry[]): GCCCountry[] {
+function mapCountryFlagList(raw: unknown, fallback: CountryFlag[]): CountryFlag[] {
   const list = unwrapStrapiCollection(raw);
   if (list.length === 0) return fallback;
   const rows = list
@@ -683,6 +737,30 @@ function mapGCCCountryList(raw: unknown, fallback: GCCCountry[]): GCCCountry[] {
     .filter((r) => r.name && r.flag)
     .sort((a, b) => a.order - b.order);
   return rows.length ? rows.map(({ name, flag }) => ({ name, flag })) : fallback;
+}
+
+/** Home region-highlights strip; `null` = hide whole section (missing field or unpublished). */
+export interface RegionHighlightsSectionBanner {
+  bannerImageUrl: string;
+  bannerTitle: string;
+  bannerDescription: string;
+}
+
+const REGION_HIGHLIGHTS_SECTION_POPULATE = [
+  "populate[bannerImage][fields][0]=url",
+  "populate[bannerImage][fields][1]=name",
+  "populate[bannerImage][fields][2]=alternativeText",
+].join("&");
+
+function mapRegionHighlightsSection(raw: unknown): RegionHighlightsSectionBanner | null {
+  const list = unwrapStrapiCollection(raw);
+  const row = list[0];
+  if (!row) return null;
+  const url = resolveMediaToAbsolute(row.bannerImage) ?? "";
+  const title = String(row.bannerTitle ?? "").trim();
+  const description = String(row.bannerDescription ?? "").trim();
+  if (!url || !title || !description) return null;
+  return { bannerImageUrl: url, bannerTitle: title, bannerDescription: description };
 }
 
 function mapCountryGuidelineList(raw: unknown, fallback: CountryGuideline[]): CountryGuideline[] {
@@ -825,6 +903,10 @@ export const navigationApi = {
 export interface HeroSlide {
   src: string;
   alt: string;
+  /** Per-slide headline (Strapi `hero.slide`); falls back to hero title in UI when absent. */
+  title?: string;
+  /** Per-slide body (Strapi `hero.slide`); falls back to hero subtitle in UI when absent. */
+  text?: string;
 }
 
 export interface PageHero {
@@ -838,7 +920,16 @@ export interface PageHero {
   seo?: PageSeo;
 }
 
-const HERO_POPULATE = "populate=*";
+/** Strapi v5: `populate=*` is only one level — media inside `slideItems` must be populated explicitly. */
+const HERO_POPULATE = [
+  "populate[slideItems][populate][image][fields][0]=url",
+  "populate[slideItems][populate][image][fields][1]=name",
+  "populate[slideItems][populate][image][fields][2]=alternativeText",
+  "populate[ctaButtons]=true",
+  "populate[promoVideo]=true",
+  "populate[seo][populate][openGraphImage][fields][0]=url",
+  "populate[seo][populate][openGraphImage][fields][1]=alternativeText",
+].join("&");
 
 export const heroApi = {
   getByPage: (page: string, fallback: PageHero) =>
@@ -944,15 +1035,24 @@ export const countryGuidelinesApi = {
     ),
 };
 
-// ── GCC Countries ──
-export interface GCCCountry {
+// ── Country flags (region strip / selector rows) ──
+export interface CountryFlag {
   name: string;
   flag: string;
 }
 
-export const gccCountriesApi = {
-  getAll: (mockData: GCCCountry[]) =>
-    strapiGet<GCCCountry[]>("gcc-countries?populate=*&sort=order:asc", mockData, (raw) => mapGCCCountryList(raw, mockData)),
+export const countryFlagsApi = {
+  getAll: (mockData: CountryFlag[]) =>
+    strapiGet<CountryFlag[]>("country-flags?populate=*&sort=order:asc", mockData, (raw) => mapCountryFlagList(raw, mockData)),
+};
+
+export const regionHighlightsSectionApi = {
+  get: () =>
+    strapiGet<RegionHighlightsSectionBanner | null>(
+      `region-highlights-section?${REGION_HIGHLIGHTS_SECTION_POPULATE}`,
+      null,
+      (raw) => mapRegionHighlightsSection(raw)
+    ),
 };
 
 // ── Equipment ──
@@ -1322,7 +1422,8 @@ export const api = {
   blog: blogApi,
   news: newsApi,
   countryGuidelines: countryGuidelinesApi,
-  gccCountries: gccCountriesApi,
+  countryFlags: countryFlagsApi,
+  regionHighlightsSection: regionHighlightsSectionApi,
   equipment: equipmentApi,
   fitnessCriteria: fitnessCriteriaApi,
   stats: statsApi,

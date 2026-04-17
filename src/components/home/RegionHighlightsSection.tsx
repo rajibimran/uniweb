@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import gccHeroBg from "@/assets/gcc-workers-hero.jpg";
-import { api, IS_STRAPI_CONFIGURED, type GCCCountry } from "@/lib/api";
+import {
+  api,
+  IS_STRAPI_CONFIGURED,
+  type CountryFlag,
+  type RegionHighlightsSectionBanner,
+} from "@/lib/api";
 
-const LOCAL_GCC_FALLBACK: GCCCountry[] = [
+const LOCAL_COUNTRY_FLAG_FALLBACK: CountryFlag[] = [
   { name: "Bahrain", flag: "https://flagcdn.com/w160/bh.png" },
   { name: "Kuwait", flag: "https://flagcdn.com/w160/kw.png" },
   { name: "Oman", flag: "https://flagcdn.com/w160/om.png" },
@@ -14,18 +18,26 @@ const LOCAL_GCC_FALLBACK: GCCCountry[] = [
   { name: "Yemen", flag: "https://flagcdn.com/w160/ye.png" },
 ];
 
-const GCCCountriesSection = () => {
-  const [countries, setCountries] = useState<GCCCountry[] | null>(IS_STRAPI_CONFIGURED ? null : LOCAL_GCC_FALLBACK);
-  const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
+/** CMS-driven banner + country-flag rows; hidden when Strapi off, unpublished, or banner incomplete. */
+const RegionHighlightsSection = () => {
+  const [banner, setBanner] = useState<RegionHighlightsSectionBanner | null | undefined>(undefined);
+  const [countries, setCountries] = useState<CountryFlag[]>([]);
 
   useEffect(() => {
-    if (!IS_STRAPI_CONFIGURED) return;
+    if (!IS_STRAPI_CONFIGURED) {
+      setBanner(null);
+      setCountries([]);
+      return;
+    }
     let cancelled = false;
     (async () => {
-      const list = await api.gccCountries.getAll(LOCAL_GCC_FALLBACK);
+      const [b, list] = await Promise.all([
+        api.regionHighlightsSection.get(),
+        api.countryFlags.getAll(LOCAL_COUNTRY_FLAG_FALLBACK),
+      ]);
       if (!cancelled) {
+        setBanner(b);
         setCountries(list);
-        setReady(true);
       }
     })();
     return () => {
@@ -33,19 +45,12 @@ const GCCCountriesSection = () => {
     };
   }, []);
 
-  if (!ready || !countries?.length) {
-    return (
-      <section className="py-8 sm:py-[48px]" aria-busy="true" aria-label="Loading GCC countries">
-        <div className="container px-4 sm:px-6">
-          <div className="mb-6 h-[240px] animate-pulse rounded-xl bg-muted sm:mb-[40px] sm:h-[320px] lg:h-[400px]" />
-          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-[16px] lg:grid-cols-4">
-            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-40 animate-pulse rounded-lg border border-border bg-muted" />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
+  if (!IS_STRAPI_CONFIGURED || banner === null) {
+    return null;
+  }
+
+  if (banner === undefined || countries.length === 0) {
+    return null;
   }
 
   return (
@@ -53,8 +58,8 @@ const GCCCountriesSection = () => {
       <div className="container px-4 sm:px-6">
         <div className="relative mb-6 overflow-hidden rounded-xl sm:mb-[40px]">
           <img
-            src={gccHeroBg}
-            alt="Bangladeshi workers successfully employed in GCC countries with country flags"
+            src={banner.bannerImageUrl}
+            alt={banner.bannerTitle}
             className="h-[240px] w-full object-cover sm:h-[320px] lg:h-[400px]"
             loading="lazy"
             width={1920}
@@ -62,17 +67,15 @@ const GCCCountriesSection = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/50 to-foreground/20" />
           <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-[32px]">
-            <h2 className="font-heading text-xl font-bold text-white sm:text-2xl lg:text-4xl">
-              GAMCA Medical Centers in Bangladesh
-            </h2>
+            <h2 className="font-heading text-xl font-bold text-white sm:text-2xl lg:text-4xl">{banner.bannerTitle}</h2>
             <p className="mt-1 max-w-xl font-body text-xs text-white/90 sm:mt-[8px] sm:text-sm lg:text-base">
-              GCC-approved medical screening for overseas employment — trusted by thousands of Bangladeshi workers
+              {banner.bannerDescription}
             </p>
             <div className="mt-3 flex flex-wrap gap-2 sm:mt-[16px] sm:gap-[12px]">
               {countries.map((country) => (
                 <div
                   key={country.name}
-                  className="group/flag flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 backdrop-blur-sm transition-all duration-300 hover:bg-white/40 hover:scale-105 sm:px-[12px] sm:py-[6px] sm:gap-[6px]"
+                  className="group/flag flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/40 sm:gap-[6px] sm:px-[12px] sm:py-[6px]"
                 >
                   <img
                     src={country.flag}
@@ -120,4 +123,4 @@ const GCCCountriesSection = () => {
   );
 };
 
-export default GCCCountriesSection;
+export default RegionHighlightsSection;
