@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Wrench } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
 import { equipmentList as defaultEquipmentList, type EquipmentItem } from "@/data/mockData";
-import { api, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
+import { api, createEmptyPageHero, formatPageTitle, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION, type PageHero } from "@/lib/api";
 
 const defaultEquipmentHero: PageHero = {
   page: "equipment",
@@ -18,12 +18,19 @@ const defaultEquipmentHero: PageHero = {
     { src: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=1600&h=900&fit=crop", alt: "Medical diagnostic devices" },
     { src: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=1600&h=900&fit=crop", alt: "Digital imaging equipment" },
   ],
+  ctaButtons: [{ label: "Book Appointment", href: "/book", variant: "primary" }],
 };
 
 const EquipmentPage = () => {
   const { pathname } = useLocation();
-  const [equipment, setEquipment] = useState<EquipmentItem[] | null>(IS_STRAPI_CONFIGURED ? null : defaultEquipmentList);
-  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultEquipmentHero);
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "Site";
+  const [equipment, setEquipment] = useState<EquipmentItem[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultEquipmentList : IS_STRAPI_CONFIGURED ? null : []
+  );
+  const [hero, setHero] = useState<PageHero | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultEquipmentHero : IS_STRAPI_CONFIGURED ? null : createEmptyPageHero("equipment")
+  );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
 
   useEffect(() => {
@@ -47,7 +54,7 @@ const EquipmentPage = () => {
       <Layout>
         <SeoHelmet
           layers={hero?.seo ? [hero.seo] : []}
-          fallbackTitle="Medical Equipment — Unicare Medical, Dhaka"
+          fallbackTitle={formatPageTitle("Medical Equipment", siteName)}
           fallbackDescription={hero?.subtitle ?? defaultEquipmentHero.subtitle}
           pathForCanonical={pathname}
         />
@@ -71,19 +78,16 @@ const EquipmentPage = () => {
     <Layout>
       <SeoHelmet
         layers={[hero.seo]}
-        fallbackTitle="Medical Equipment — Unicare Medical, Dhaka"
+        fallbackTitle={formatPageTitle(hero.title || "Medical Equipment", siteName)}
         fallbackDescription={hero.subtitle}
         pathForCanonical={pathname}
       />
-      <PageHeroSlider images={hero.slides} title={hero.title} subtitle={hero.subtitle}>
-        <div className="mt-[24px] flex justify-center">
-          <Link to="/book">
-            <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">
-              Book Appointment
-            </Button>
-          </Link>
-        </div>
-      </PageHeroSlider>
+      <PageHeroSlider
+        images={hero.slides}
+        fallbackCtaButtons={hero.ctaButtons}
+        title={hero.title}
+        subtitle={hero.subtitle}
+      />
 
       <PageBreadcrumb items={[{ label: "Medical Equipment" }]} />
 

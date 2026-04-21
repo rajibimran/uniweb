@@ -1,12 +1,12 @@
 /**
  * API Service Layer — Strapi Integration Ready
  *
- * Currently returns mock data from @/data/mockData and @/data/newsData.
+ * Bundled mock/demo rows live in this **frontend** repo (`@/data/*`). Strapi (backend) has no mock toggle.
  * To integrate Strapi:
- *   1. Set VITE_STRAPI_URL in your .env file
+ *   1. Set VITE_STRAPI_URL in the **frontend** `.env` (Vite)
  *   2. (Optional) Set VITE_STRAPI_API_KEY for authenticated read access
  *   3. Create matching content types in Strapi
- *   4. The mock fallbacks auto-disable once Strapi is connected
+ *   4. `VITE_MOCK_DATA` (frontend only, default Yes) controls whether those bundled rows are used as fallbacks
  *
  * Usage:
  *   const articles = await api.blog.getAll();
@@ -35,21 +35,85 @@ import {
   fitnessCriteria as defaultFitnessCriteria,
   footerQuickLinks as defaultQuickLinks,
   footerServices as defaultFooterServices,
+  homeFAQs,
   navItems as defaultNavItems,
   serviceFAQs as defaultFAQs,
   servicePackages as defaultPackages,
-  serviceCategories as defaultServiceCategories,
   services as defaultServices,
   serviceDetails as defaultServiceDetails,
   stats as defaultStats,
   testimonials as defaultTestimonials,
 } from "@/data/mockData";
 
-const STRAPI_BASE_URL = import.meta.env.VITE_STRAPI_URL || "";
+export const STRAPI_BASE_URL = import.meta.env.VITE_STRAPI_URL || "";
 const STRAPI_API_KEY = import.meta.env.VITE_STRAPI_API_KEY || "";
+
+/** Strapi Users & Permissions role `type` for lab PDF uploads (`/staff/lab-reports`). */
+export const LAB_STAFF_ROLE_TYPE = "lab-staff";
 
 /** True when the app should load layout/pages from Strapi (no mock-first UI). */
 export const IS_STRAPI_CONFIGURED = Boolean(STRAPI_BASE_URL.trim());
+
+/** Frontend-only (Vite `import.meta.env`). Strapi ignores this. Yes/true/1/on (default) = allow bundled `@/data` fallbacks; No/false/0/off = SPA shows empty sections when CMS is blank or API fails. */
+function readMockDataEnabled(): boolean {
+  const raw = import.meta.env.VITE_MOCK_DATA ?? import.meta.env.VITE_MOCKDATA;
+  const v = String(raw ?? "Yes").trim().toLowerCase();
+  if (["no", "false", "0", "off", "n"].includes(v)) return false;
+  return true;
+}
+
+export const IS_MOCK_DATA_ENABLED = readMockDataEnabled();
+
+/**
+ * Offline / demo hydration from `@/data` when Strapi URL is unset.
+ * When false and Strapi is unset, pages start empty instead of mock rows.
+ */
+export const USE_LOCAL_MOCK_HYDRATION = !IS_STRAPI_CONFIGURED && IS_MOCK_DATA_ENABLED;
+
+/** Page title for `<title>` / OG when Strapi SEO is absent. Avoids hardcoding brand in page files. */
+export function formatPageTitle(pagePart: string, siteName: string): string {
+  const p = pagePart.trim();
+  const s = siteName.trim();
+  if (!p) return s || "Home";
+  if (!s) return p;
+  return `${p} — ${s}`;
+}
+
+/** Strapi string, blocks JSON, or other → markdown-ish string for `<RichText />`. */
+function strapiRichOrTextToMarkdown(val: unknown): string {
+  if (val == null) return "";
+  if (typeof val === "string") return val;
+  if (Array.isArray(val)) return richtextToPlainString(val);
+  return String(val);
+}
+
+export interface FooterColumnConfig {
+  title: string;
+  body: string;
+  showMap: boolean;
+  links: { label: string; href: string }[];
+}
+
+function mapFooterColumns(raw: unknown): FooterColumnConfig[] {
+  return normalizeComponentList(raw)
+    .map((r) => {
+      const title = String(r.title ?? "").trim();
+      if (!title) return null;
+      const links = normalizeComponentList(r.links)
+        .map((l) => ({
+          label: String(l.label ?? "").trim(),
+          href: String(l.href ?? "").trim(),
+        }))
+        .filter((l) => l.label && l.href);
+      return {
+        title,
+        body: String(r.body ?? "").trim(),
+        showMap: Boolean(r.showMap),
+        links,
+      };
+    })
+    .filter(Boolean) as FooterColumnConfig[];
+}
 
 interface StrapiResponse<T> {
   data: T;
@@ -275,11 +339,13 @@ function mapSlideItemsToHeroSlides(
     );
     const slideTitle = String(row.title ?? "").trim();
     const slideText = String(row.text ?? "").trim();
+    const slideCtas = mapCtaButtons((row as Record<string, unknown>).ctaButtons);
     out.push({
       src: url,
       alt: altFromMedia || slideTitle || fallbackTitle,
       ...(slideTitle ? { title: slideTitle } : {}),
       ...(slideText ? { text: slideText } : {}),
+      ...(slideCtas?.length ? { ctaButtons: slideCtas } : {}),
     });
   }
   return out;
@@ -326,67 +392,110 @@ function mapPageSeo(raw: unknown): PageSeo | undefined {
     openGraphImage: resolveMediaToAbsolute(row.openGraphImage) ?? "",
     openGraphImageAlt: String(row.openGraphImageAlt ?? "").trim(),
     twitterCard: tw === "summary" || tw === "summary_large_image" ? tw : "summary_large_image",
-    structuredData: row.structuredData ?? null,
+    structuredData: parseStructuredDataField(row.structuredData),
     noIndex: Boolean(row.noIndex),
     snippetForAiOverview: String(row.snippetForAiOverview ?? "").trim(),
   };
 }
 
 function mapSiteConfig(raw: unknown, defaults: SiteConfig): SiteConfig {
+  const base = IS_MOCK_DATA_ENABLED ? defaults : emptySiteConfig;
   const flat = flattenStrapiEntity(raw);
-  if (!flat) return defaults;
+  if (!flat) return base;
 
-  const logo = resolveMediaToAbsolute(flat.logo) ?? defaults.logo;
+  const logo = resolveMediaToAbsolute(flat.logo) ?? base.logo;
 
   return {
-    siteName: String(flat.siteName ?? defaults.siteName),
-    tagline: String(flat.tagline ?? defaults.tagline),
+    siteName: String(flat.siteName ?? base.siteName),
+    tagline: String(flat.tagline ?? base.tagline),
     logo,
-    phone: String(flat.phone ?? defaults.phone),
-    email: String(flat.email ?? defaults.email),
-    address: String(flat.address ?? defaults.address),
-    workingHours: String(flat.workingHours ?? defaults.workingHours),
-    googleMapsEmbed: String(flat.googleMapsEmbed ?? defaults.googleMapsEmbed),
+    phone: String(flat.phone ?? base.phone),
+    email: String(flat.email ?? base.email),
+    address: String(flat.address ?? base.address),
+    workingHours: String(flat.workingHours ?? base.workingHours),
+    googleMapsEmbed: String(flat.googleMapsEmbed ?? base.googleMapsEmbed),
     socialLinks: {
-      ...defaults.socialLinks,
+      ...base.socialLinks,
       ...(flat.facebookUrl ? { facebook: String(flat.facebookUrl) } : {}),
       ...(flat.instagramUrl ? { instagram: String(flat.instagramUrl) } : {}),
       ...(flat.linkedinUrl ? { linkedin: String(flat.linkedinUrl) } : {}),
     },
-    defaultSeo: mapPageSeo(flat.defaultSeo) ?? defaults.defaultSeo,
+    showBlogSection: flat.showBlogSection !== false,
+    showNewsSection: flat.showNewsSection !== false,
+    commentsEnabled: flat.commentsEnabled === true,
+    contactFormToEmail: String(flat.contactFormToEmail ?? base.contactFormToEmail).trim(),
+    contactFormSendConfirmation: flat.contactFormSendConfirmation !== false,
+    bookingFormToEmail: String(flat.bookingFormToEmail ?? base.bookingFormToEmail).trim(),
+    bookingFormSendConfirmation: flat.bookingFormSendConfirmation !== false,
+    defaultSeo: mapPageSeo(flat.defaultSeo) ?? base.defaultSeo,
+    footerBrandExtra: String(flat.footerBrandExtra ?? base.footerBrandExtra ?? "").trim(),
+    footerColumns: (() => {
+      const cols = mapFooterColumns(flat.footerColumns);
+      return cols.length > 0 ? cols : base.footerColumns;
+    })(),
+    footerCertStripTitle: String(flat.footerCertStripTitle ?? base.footerCertStripTitle ?? "").trim(),
+    footerPrivacyLinkLabel: String(flat.footerPrivacyLinkLabel ?? base.footerPrivacyLinkLabel ?? "").trim(),
+    footerCopyrightExtra: String(flat.footerCopyrightExtra ?? base.footerCopyrightExtra ?? "").trim(),
+    footerMapPlaceholderLabel: String(flat.footerMapPlaceholderLabel ?? base.footerMapPlaceholderLabel ?? "").trim(),
+    footerLegacyQuickTitle: String(flat.footerLegacyQuickTitle ?? base.footerLegacyQuickTitle ?? "").trim(),
+    footerLegacyServicesTitle: String(flat.footerLegacyServicesTitle ?? base.footerLegacyServicesTitle ?? "").trim(),
+    footerLegacyHelpTitle: String(flat.footerLegacyHelpTitle ?? base.footerLegacyHelpTitle ?? "").trim(),
+    footerLegacyHelpBody: String(flat.footerLegacyHelpBody ?? base.footerLegacyHelpBody ?? "").trim(),
+    quickContactSectionTitle: String(flat.quickContactSectionTitle ?? base.quickContactSectionTitle ?? "").trim(),
+    quickContactSectionBody: String(flat.quickContactSectionBody ?? base.quickContactSectionBody ?? "").trim(),
+    quickContactFormHeading: String(flat.quickContactFormHeading ?? base.quickContactFormHeading ?? "").trim(),
+    quickContactSuccessHeading: String(flat.quickContactSuccessHeading ?? base.quickContactSuccessHeading ?? "").trim(),
+    quickContactSuccessBody: String(flat.quickContactSuccessBody ?? base.quickContactSuccessBody ?? "").trim(),
+    quickContactIframeTitle: String(flat.quickContactIframeTitle ?? base.quickContactIframeTitle ?? "").trim(),
   };
 }
 
+export function createEmptyPageHero(page: string): PageHero {
+  return { page, title: "", subtitle: "", slides: [] };
+}
+
 function mapPageHero(raw: unknown, fallback: PageHero): PageHero {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : createEmptyPageHero(String(fallback.page));
   const list = unwrapStrapiCollection(raw);
   const first = list[0];
-  if (!first) return fallback;
+  if (!first) return base;
 
-  const rootTitle = String(first.title ?? fallback.title);
-  const rootSubtitle = String(first.subtitle ?? fallback.subtitle);
+  const rootTitle = String(first.title ?? base.title);
+  const rootSubtitle = String(first.subtitle ?? base.subtitle);
 
   const fromSlideItems = mapSlideItemsToHeroSlides(first.slideItems, rootTitle, rootSubtitle);
   const legacyMediaSlides =
     fromSlideItems.length === 0 ? mapMediaListToSlides((first as Record<string, unknown>).slides) : [];
 
-  const slides =
+  const slidesBase =
     fromSlideItems.length > 0
       ? fromSlideItems
       : legacyMediaSlides.length > 0
         ? legacyMediaSlides
-        : fallback.slides;
+        : IS_MOCK_DATA_ENABLED
+          ? base.slides
+          : [];
 
-  const ctas = mapCtaButtons(first.ctaButtons);
+  const rootCtas = mapCtaButtons(first.ctaButtons) ?? base.ctaButtons;
+  const slides = slidesBase.map((s) => ({
+    ...s,
+    ctaButtons:
+      s.ctaButtons && s.ctaButtons.length > 0
+        ? s.ctaButtons
+        : rootCtas && rootCtas.length > 0
+          ? rootCtas
+          : undefined,
+  }));
   const promoVideoUrl = resolveMediaToAbsolute(first.promoVideo) ?? "";
 
   return {
-    page: String(first.page ?? fallback.page),
+    page: String(first.page ?? base.page),
     title: rootTitle,
     subtitle: rootSubtitle,
     slides,
-    ctaButtons: ctas ?? fallback.ctaButtons,
+    ctaButtons: rootCtas,
     ...(promoVideoUrl ? { promoVideoUrl } : {}),
-    seo: mapPageSeo(first.seo) ?? fallback.seo,
+    seo: mapPageSeo(first.seo) ?? base.seo,
   };
 }
 
@@ -394,9 +503,27 @@ function mapValueItemImg(row: Record<string, unknown>): string {
   return resolveMediaToAbsolute(row.img) ?? "";
 }
 
+export function getEmptyAboutPageContent(): AboutPageContent {
+  return {
+    missionTitle: "",
+    missionText: "",
+    missionImage: "",
+    centerTitle: "",
+    centerText: "",
+    centerImage: "",
+    valuesSectionTitle: "",
+    values: [],
+    facilityGalleryTitle: "",
+    facilityGallerySubtitle: "",
+    gallery: [],
+    virtualTourYoutubeUrl: "",
+  };
+}
+
 function mapAboutPage(raw: unknown, defaults: AboutPageContent): AboutPageContent {
+  const base = IS_MOCK_DATA_ENABLED ? defaults : getEmptyAboutPageContent();
   const flat = flattenStrapiEntity(raw);
-  if (!flat) return defaults;
+  if (!flat) return base;
 
   const valueRows = normalizeComponentList(flat.values);
   const values =
@@ -405,44 +532,45 @@ function mapAboutPage(raw: unknown, defaults: AboutPageContent): AboutPageConten
           title: String(row.title ?? ""),
           desc: String(row.desc ?? ""),
           alt: String(row.alt ?? ""),
-          img: mapValueItemImg(row) || defaults.values[0]?.img || "",
+          img: mapValueItemImg(row) || base.values[0]?.img || "",
         }))
-      : defaults.values;
+      : base.values;
 
   const galleryRows = normalizeComponentList(flat.gallery);
   const gallery =
     galleryRows.length > 0
       ? galleryRows.map((row) => ({
-          src: resolveMediaToAbsolute(row.image) || defaults.gallery[0]?.src || "",
+          src: resolveMediaToAbsolute(row.image) || base.gallery[0]?.src || "",
           alt: String(row.alt ?? ""),
         }))
-      : defaults.gallery;
+      : base.gallery;
 
   const missionText =
-    richtextToPlainString(flat.missionText) || String(flat.missionText ?? defaults.missionText);
+    richtextToPlainString(flat.missionText) || String(flat.missionText ?? base.missionText);
   const centerText =
-    richtextToPlainString(flat.centerText) || String(flat.centerText ?? defaults.centerText);
+    richtextToPlainString(flat.centerText) || String(flat.centerText ?? base.centerText);
 
   return {
-    missionTitle: String(flat.missionTitle ?? defaults.missionTitle),
+    missionTitle: String(flat.missionTitle ?? base.missionTitle),
     missionText,
-    missionImage: resolveMediaToAbsolute(flat.missionImage) ?? defaults.missionImage,
-    centerTitle: String(flat.centerTitle ?? defaults.centerTitle),
+    missionImage: resolveMediaToAbsolute(flat.missionImage) ?? base.missionImage,
+    centerTitle: String(flat.centerTitle ?? base.centerTitle),
     centerText,
-    centerImage: resolveMediaToAbsolute(flat.centerImage) ?? defaults.centerImage,
-    valuesSectionTitle: String(flat.valuesSectionTitle ?? defaults.valuesSectionTitle),
+    centerImage: resolveMediaToAbsolute(flat.centerImage) ?? base.centerImage,
+    valuesSectionTitle: String(flat.valuesSectionTitle ?? base.valuesSectionTitle),
     values,
-    facilityGalleryTitle: String(flat.facilityGalleryTitle ?? defaults.facilityGalleryTitle),
-    facilityGallerySubtitle: String(flat.facilityGallerySubtitle ?? defaults.facilityGallerySubtitle),
+    facilityGalleryTitle: String(flat.facilityGalleryTitle ?? base.facilityGalleryTitle),
+    facilityGallerySubtitle: String(flat.facilityGallerySubtitle ?? base.facilityGallerySubtitle),
     gallery,
     virtualTourYoutubeUrl: String(flat.virtualTourYoutubeUrl ?? "").trim(),
-    seo: mapPageSeo(flat.seo) ?? defaults.seo,
+    seo: mapPageSeo(flat.seo) ?? base.seo,
   };
 }
 
 function mapServiceCards(raw: unknown, fallback: ServiceCard[]): ServiceCard[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   return list.map((row) => {
     const slug = String(row.slug ?? "");
     const cardImage = resolveMediaToAbsolute(row.cardImage) ?? resolveMediaToAbsolute(row.heroImage);
@@ -452,7 +580,7 @@ function mapServiceCards(raw: unknown, fallback: ServiceCard[]): ServiceCard[] {
       title: String(row.title ?? ""),
       description: String(row.description ?? ""),
       href: slug ? `/services/${slug}` : "#",
-      category: String(row.category ?? ""),
+      category: mapServiceCategoryLabel(row.category),
       ...(cardImage ? { cardImage } : {}),
       ...(iconImage ? { iconImage } : {}),
     };
@@ -495,7 +623,7 @@ function mapServiceDetail(row: Record<string, unknown>): ServiceDetail | undefin
     slug,
     icon: String(row.icon ?? "CircleDot"),
     title: String(row.title ?? ""),
-    category: String(row.category ?? ""),
+    category: mapServiceCategoryLabel(row.category),
     heroImage: hero,
     description,
     benefits: mapServiceStringList(row.benefits),
@@ -510,9 +638,10 @@ function mapServiceDetail(row: Record<string, unknown>): ServiceDetail | undefin
 }
 
 function mapServiceDetailResponse(raw: unknown, fallback: ServiceDetail | undefined): ServiceDetail | undefined {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : undefined;
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
-  return mapServiceDetail(list[0]) ?? fallback;
+  if (list.length === 0) return base;
+  return mapServiceDetail(list[0]) ?? base;
 }
 
 function formatDateIso(val: unknown): string {
@@ -544,7 +673,42 @@ function parseJsonStringArray(val: unknown): string[] {
   return [];
 }
 
+/** Lines from repeatable `service.simple-line` (text) — preferred over legacy JSON arrays. */
+function mapSimpleLineTexts(val: unknown): string[] {
+  const lines = normalizeComponentList(val)
+    .map((r) => String(r.text ?? "").trim())
+    .filter(Boolean);
+  if (lines.length > 0) return lines;
+  return parseJsonStringArray(val);
+}
+
+/** Service `category`: relation to service-category (name) or legacy enumeration string. */
+function mapServiceCategoryLabel(val: unknown): string {
+  if (val == null) return "";
+  if (typeof val === "string") return val.trim();
+  const f = flattenStrapiEntity(val);
+  if (!f) return "";
+  return String(f.name ?? "").trim();
+}
+
+/** SEO JSON-LD: `text` field (paste JSON) or legacy JSON attribute / object. */
+function parseStructuredDataField(val: unknown): unknown {
+  if (val == null) return null;
+  if (typeof val === "object") return val;
+  if (typeof val === "string") {
+    const t = val.trim();
+    if (!t) return null;
+    try {
+      return JSON.parse(t) as unknown;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function mapNavItems(raw: unknown, fallback: NavItem[]): NavItem[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
   type Row = { id: string; parentId: string | null; label: string; href: string; order: number };
   const rows: Row[] = [];
@@ -562,7 +726,7 @@ function mapNavItems(raw: unknown, fallback: NavItem[]): NavItem[] {
       order: Number(row.order ?? 0),
     });
   }
-  if (rows.length === 0) return fallback;
+  if (rows.length === 0) return base;
   rows.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
 
   function itemFor(row: Row): NavItem {
@@ -576,13 +740,14 @@ function mapNavItems(raw: unknown, fallback: NavItem[]): NavItem[] {
   }
 
   const roots = rows.filter((r) => !r.parentId);
-  if (roots.length === 0) return fallback;
+  if (roots.length === 0) return base;
   return roots.map(itemFor);
 }
 
 function mapFooterLinks(raw: unknown, fallback: FooterLink[]): FooterLink[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const mapped = list
     .map((row) => ({
       label: String(row.label ?? "").trim(),
@@ -591,44 +756,71 @@ function mapFooterLinks(raw: unknown, fallback: FooterLink[]): FooterLink[] {
     }))
     .filter((r) => r.label && r.href)
     .sort((a, b) => a.order - b.order);
-  return mapped.length ? mapped.map(({ label, href }) => ({ label, href })) : fallback;
+  return mapped.length ? mapped.map(({ label, href }) => ({ label, href })) : base;
 }
 
 export interface CertificationBadge {
+  /** Stable key from Strapi `documentId` / `id` for list rendering. */
+  id: string;
   name: string;
-  /** Absolute URL from Strapi Media when set; empty shows text-only badge. */
+  /** Absolute URL from Strapi Media when set; empty shows text-only badge when `name` is set. */
   logoUrl: string;
+  /** Optional; surfaced as hover title / accessible description. */
+  shortDescription?: string;
+  /** When set, logo or name is wrapped in a link (typically opens verifier in a new tab). */
+  verificationUrl?: string;
 }
 
 function mapCertificationList(raw: unknown, fallback: CertificationBadge[]): CertificationBadge[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const rows = list
-    .map((row) => ({
-      name: String(row.name ?? "").trim(),
-      logoUrl: resolveMediaToAbsolute(row.logo) ?? "",
-      order: Number(row.order ?? 0),
-    }))
-    .filter((r) => r.name)
+    .map((row, idx) => {
+      const name = String(row.name ?? "").trim();
+      const logoUrl = resolveMediaToAbsolute(row.logo) ?? "";
+      const shortDescription = String(row.shortDescription ?? "").trim();
+      const verificationUrl = String(row.verificationUrl ?? "").trim();
+      const id = String(row.documentId ?? row.id ?? `cert-${idx}`);
+      return {
+        id,
+        name,
+        logoUrl,
+        ...(shortDescription ? { shortDescription } : {}),
+        ...(verificationUrl ? { verificationUrl } : {}),
+        order: Number(row.order ?? 0),
+      };
+    })
+    .filter((r) => r.name || r.logoUrl || r.shortDescription || r.verificationUrl)
     .sort((a, b) => a.order - b.order);
-  return rows.length ? rows.map(({ name, logoUrl }) => ({ name, logoUrl })) : fallback;
+  return rows.length
+    ? rows.map(({ id, name, logoUrl, shortDescription, verificationUrl }) => ({
+        id,
+        name,
+        logoUrl,
+        ...(shortDescription ? { shortDescription } : {}),
+        ...(verificationUrl ? { verificationUrl } : {}),
+      }))
+    : base;
 }
 
 function mapGalleryImages(raw: unknown, fallback: { src: string; alt: string }[]): { src: string; alt: string }[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const out: { src: string; alt: string }[] = [];
   for (const row of list.sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0))) {
     const src = resolveMediaToAbsolute(row.image) ?? "";
     const alt = String(row.alt ?? "");
     if (src) out.push({ src, alt });
   }
-  return out.length ? out : fallback;
+  return out.length ? out : base;
 }
 
 function mapStatItems(raw: unknown, fallback: StatItem[]): StatItem[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const rows = list
     .map((row) => ({
       label: String(row.label ?? ""),
@@ -637,12 +829,13 @@ function mapStatItems(raw: unknown, fallback: StatItem[]): StatItem[] {
       order: Number(row.order ?? 0),
     }))
     .sort((a, b) => a.order - b.order);
-  return rows.every((r) => r.label) ? rows.map(({ label, value, suffix }) => ({ label, value, suffix })) : fallback;
+  return rows.every((r) => r.label) ? rows.map(({ label, value, suffix }) => ({ label, value, suffix })) : base;
 }
 
 function mapTestimonialItems(raw: unknown, fallback: Testimonial[]): Testimonial[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const rows = list
     .map((row) => ({
       name: String(row.name ?? ""),
@@ -653,25 +846,27 @@ function mapTestimonialItems(raw: unknown, fallback: Testimonial[]): Testimonial
     }))
     .filter((r) => r.name && r.quote)
     .sort((a, b) => a.order - b.order);
-  return rows.length ? rows.map(({ name, photo, rating, quote }) => ({ name, photo, rating, quote })) : fallback;
+  return rows.length ? rows.map(({ name, photo, rating, quote }) => ({ name, photo, rating, quote })) : base;
 }
 
 function mapFitnessCriteriaList(raw: unknown, fallback: FitnessCriteria[]): FitnessCriteria[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const out: FitnessCriteria[] = [];
   for (const row of list) {
     const category = String(row.category ?? "");
     const description = String(row.description ?? "");
-    const items = parseJsonStringArray(row.items);
+    const items = mapSimpleLineTexts(row.itemLines ?? row.items);
     if (category && description && items.length) out.push({ category, description, items });
   }
-  return out.length ? out : fallback;
+  return out.length ? out : base;
 }
 
 function mapEquipmentItems(raw: unknown, fallback: EquipmentItem[]): EquipmentItem[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const out: EquipmentItem[] = [];
   for (const row of list) {
     const slNo = String(row.slNo ?? "");
@@ -690,17 +885,18 @@ function mapEquipmentItems(raw: unknown, fallback: EquipmentItem[]): EquipmentIt
       ...(image ? { image } : {}),
     });
   }
-  return out.length ? out : fallback;
+  return out.length ? out : base;
 }
 
 function mapServicePackagesList(raw: unknown, fallback: ServicePackage[]): ServicePackage[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const rows = list
     .map((row) => ({
       title: String(row.title ?? ""),
       description: String(row.description ?? ""),
-      features: parseJsonStringArray(row.features),
+      features: mapSimpleLineTexts(row.featureLines ?? row.features),
       pricing: String(row.pricing ?? ""),
       order: Number(row.order ?? 0),
     }))
@@ -708,12 +904,13 @@ function mapServicePackagesList(raw: unknown, fallback: ServicePackage[]): Servi
     .sort((a, b) => a.order - b.order);
   return rows.length
     ? rows.map(({ title, description, features, pricing }) => ({ title, description, features, pricing }))
-    : fallback;
+    : base;
 }
 
 function mapFAQItems(raw: unknown, fallback: FAQItem[]): FAQItem[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const rows = list
     .map((row) => ({
       question: String(row.question ?? ""),
@@ -722,12 +919,21 @@ function mapFAQItems(raw: unknown, fallback: FAQItem[]): FAQItem[] {
     }))
     .filter((r) => r.question && r.answer)
     .sort((a, b) => a.order - b.order);
-  return rows.length ? rows.map(({ question, answer }) => ({ question, answer })) : fallback;
+  return rows.length ? rows.map(({ question, answer }) => ({ question, answer })) : base;
+}
+
+const FAQ_MOCK_ALL: FAQItem[] = [...homeFAQs, ...defaultFAQs];
+
+function faqFallbackForPage(page: string): FAQItem[] {
+  if (page === "home") return homeFAQs;
+  if (page === "services") return defaultFAQs;
+  return [];
 }
 
 function mapCountryFlagList(raw: unknown, fallback: CountryFlag[]): CountryFlag[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const rows = list
     .map((row) => ({
       name: String(row.name ?? "").trim(),
@@ -736,7 +942,7 @@ function mapCountryFlagList(raw: unknown, fallback: CountryFlag[]): CountryFlag[
     }))
     .filter((r) => r.name && r.flag)
     .sort((a, b) => a.order - b.order);
-  return rows.length ? rows.map(({ name, flag }) => ({ name, flag })) : fallback;
+  return rows.length ? rows.map(({ name, flag }) => ({ name, flag })) : base;
 }
 
 /** Home region-highlights strip; `null` = hide whole section (missing field or unpublished). */
@@ -764,8 +970,9 @@ function mapRegionHighlightsSection(raw: unknown): RegionHighlightsSectionBanner
 }
 
 function mapCountryGuidelineList(raw: unknown, fallback: CountryGuideline[]): CountryGuideline[] {
+  const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
-  if (list.length === 0) return fallback;
+  if (list.length === 0) return base;
   const out: CountryGuideline[] = [];
   for (const row of list) {
     const countryId = String(row.countryId ?? "").trim();
@@ -785,20 +992,58 @@ function mapCountryGuidelineList(raw: unknown, fallback: CountryGuideline[]): Co
       visaCategories: String(row.visaCategories ?? ""),
     });
   }
-  return out.length ? out : fallback;
+  return out.length ? out : base;
+}
+
+function mapPostCategoryLabel(val: unknown): string {
+  if (val == null) return "";
+  if (typeof val === "string") return val.trim();
+  const f = flattenStrapiEntity(val);
+  if (!f) return "";
+  return String(f.name ?? "").trim();
+}
+
+export interface PostAuthor {
+  name: string;
+  slug: string;
+  avatarUrl?: string;
+}
+
+function mapPostAuthor(val: unknown): PostAuthor | undefined {
+  const f = flattenStrapiEntity(val);
+  if (!f) return undefined;
+  const name = String(f.name ?? "").trim();
+  const slug = String(f.slug ?? "").trim();
+  if (!name) return undefined;
+  const avatarUrl = resolveMediaToAbsolute(f.avatar) ?? undefined;
+  return { name, slug, ...(avatarUrl ? { avatarUrl } : {}) };
+}
+
+function estimateReadMinutesFromContent(content: unknown): number | undefined {
+  const plain = richtextToPlainString(content) || String(content ?? "");
+  const words = plain.split(/\s+/).filter(Boolean).length;
+  if (!words) return undefined;
+  return Math.max(1, Math.round(words / 200));
 }
 
 function mapBlogArticleRow(row: Record<string, unknown>): BlogArticle | undefined {
   const slug = String(row.slug ?? "").trim();
   if (!slug) return undefined;
   const img = resolveMediaToAbsolute(row.image) ?? "";
+  const category = mapPostCategoryLabel(row.postCategory ?? row.category);
+  const author = mapPostAuthor(row.author);
+  const readMinutes = estimateReadMinutesFromContent(row.content);
   return {
     slug,
     title: String(row.title ?? ""),
     excerpt: String(row.excerpt ?? ""),
     image: img,
     date: formatDateIso(row.date),
-    category: String(row.category ?? ""),
+    category,
+    isFeatured: Boolean(row.isFeatured),
+    commentsOpen: row.commentsOpen !== false,
+    ...(author ? { author } : {}),
+    ...(readMinutes != null ? { readMinutes } : {}),
     content: richtextToPlainString(row.content) || String(row.content ?? ""),
     seo: mapPageSeo(row.seo),
   };
@@ -815,6 +1060,9 @@ function mapNewsPostRow(row: Record<string, unknown>): NewsPost | undefined {
   if (!slug) return undefined;
   const id = String(row.documentId ?? row.id ?? slug);
   const img = resolveMediaToAbsolute(row.image) ?? "";
+  const category = mapPostCategoryLabel(row.postCategory ?? row.category);
+  const author = mapPostAuthor(row.author);
+  const readMinutes = estimateReadMinutesFromContent(row.content);
   return {
     id,
     slug,
@@ -822,7 +1070,11 @@ function mapNewsPostRow(row: Record<string, unknown>): NewsPost | undefined {
     excerpt: String(row.excerpt ?? ""),
     image: img,
     date: formatDateIso(row.date),
-    category: String(row.category ?? ""),
+    category,
+    isFeatured: Boolean(row.isFeatured),
+    commentsOpen: row.commentsOpen !== false,
+    ...(author ? { author } : {}),
+    ...(readMinutes != null ? { readMinutes } : {}),
     content: richtextToPlainString(row.content) || String(row.content ?? ""),
     seo: mapPageSeo(row.seo),
   };
@@ -841,7 +1093,11 @@ function mapNewsPosts(raw: unknown): NewsPost[] {
 async function strapiGet<T>(endpoint: string, fallback: T): Promise<T>;
 async function strapiGet<T>(endpoint: string, fallback: T, normalize: (raw: unknown) => T): Promise<T>;
 async function strapiGet<T>(endpoint: string, fallback: T, normalize?: (raw: unknown) => T): Promise<T> {
-  if (!STRAPI_BASE_URL) return fallback;
+  if (!STRAPI_BASE_URL) {
+    if (IS_MOCK_DATA_ENABLED) return fallback;
+    if (normalize) return normalize(null);
+    return fallback;
+  }
 
   try {
     const headers: HeadersInit = STRAPI_API_KEY ? { Authorization: `Bearer ${STRAPI_API_KEY}` } : {};
@@ -855,7 +1111,12 @@ async function strapiGet<T>(endpoint: string, fallback: T, normalize?: (raw: unk
     if (normalize) return normalize(raw);
     return raw as T;
   } catch (err) {
-    console.warn(`[api] Strapi unavailable, using mock data for ${endpoint}`, err);
+    if (IS_MOCK_DATA_ENABLED) {
+      console.warn(`[api] Strapi unavailable, using mock data for ${endpoint}`, err);
+      return fallback;
+    }
+    console.warn(`[api] Strapi request failed for ${endpoint} (VITE_MOCK_DATA is off; returning empty shape)`, err);
+    if (normalize) return normalize(null);
     return fallback;
   }
 }
@@ -871,8 +1132,42 @@ export interface SiteConfig {
   workingHours: string;
   googleMapsEmbed: string;
   socialLinks: { facebook?: string; instagram?: string; linkedin?: string };
+  /** When false, hide `/blog` in nav and gate the route. Default true if absent in Strapi. */
+  showBlogSection: boolean;
+  /** When false, hide `/news` in nav and gate the route. Default true if absent in Strapi. */
+  showNewsSection: boolean;
+  /** Public comment form + list require this true (and per-post `commentsOpen`). */
+  commentsEnabled: boolean;
+  /** Optional inbox for contact-form notifications; if empty, **Email** is used. */
+  contactFormToEmail: string;
+  /** When true (default), send the visitor a confirmation email if SMTP is configured on the server. */
+  contactFormSendConfirmation: boolean;
+  /** Optional inbox for booking notifications; falls back to **contactFormToEmail** then **email**. */
+  bookingFormToEmail: string;
+  /** When true (default), send the patient a booking-request confirmation when SMTP is configured. */
+  bookingFormSendConfirmation: boolean;
   /** Global defaults for `<title>`, meta description, OG/Twitter, JSON-LD. */
   defaultSeo?: PageSeo;
+  /** Paragraph under tagline in footer column 1 (optional). */
+  footerBrandExtra?: string;
+  /** When non-empty, replaces legacy quick/services/help link columns. */
+  footerColumns?: FooterColumnConfig[];
+  footerCertStripTitle?: string;
+  footerPrivacyLinkLabel?: string;
+  /** Appended after site name in copyright (e.g. `, Dhaka. All rights reserved.`). */
+  footerCopyrightExtra?: string;
+  footerMapPlaceholderLabel?: string;
+  /** When `footerColumns` is empty, headings/copy for legacy link columns. */
+  footerLegacyQuickTitle?: string;
+  footerLegacyServicesTitle?: string;
+  footerLegacyHelpTitle?: string;
+  footerLegacyHelpBody?: string;
+  quickContactSectionTitle?: string;
+  quickContactSectionBody?: string;
+  quickContactFormHeading?: string;
+  quickContactSuccessHeading?: string;
+  quickContactSuccessBody?: string;
+  quickContactIframeTitle?: string;
 }
 
 export const defaultSiteConfig: SiteConfig = {
@@ -885,9 +1180,75 @@ export const defaultSiteConfig: SiteConfig = {
   workingHours: "Sat–Thu: 8:00 AM – 8:00 PM",
   googleMapsEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3652.0!2d90.4!3d23.75!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDQ1JzAwLjAiTiA5MMKwMjQnMDAuMCJF!5e0!3m2!1sen!2sbd!4v1",
   socialLinks: { facebook: "https://facebook.com", instagram: "https://instagram.com", linkedin: "https://linkedin.com" },
+  showBlogSection: true,
+  showNewsSection: true,
+  commentsEnabled: false,
+  contactFormToEmail: "",
+  contactFormSendConfirmation: true,
+  bookingFormToEmail: "",
+  bookingFormSendConfirmation: true,
+  footerBrandExtra:
+    "GCC approved medical center providing comprehensive health screening and certification services in Dhaka, Bangladesh.",
+  footerColumns: [],
+  footerCertStripTitle: "Approved & Certified By",
+  footerPrivacyLinkLabel: "Privacy Policy",
+  footerCopyrightExtra: ", Dhaka. All rights reserved.",
+  footerMapPlaceholderLabel: "Map Placeholder",
+  footerLegacyQuickTitle: "Quick Navigation",
+  footerLegacyServicesTitle: "Our Services",
+  footerLegacyHelpTitle: "Help Desk",
+  footerLegacyHelpBody: "Need assistance? Our help desk is available during working hours.",
+  quickContactSectionTitle: "Get In Touch",
+  quickContactSectionBody:
+    "Have questions? Reach out to us directly or send a quick message. Submissions are saved for staff and can trigger email when the server is configured.",
+  quickContactFormHeading: "Send a Message",
+  quickContactSuccessHeading: "Message Sent!",
+  quickContactSuccessBody: "We'll get back to you within 24 hours.",
+  quickContactIframeTitle: "Clinic location",
 };
 
-const SITE_CONFIG_POPULATE = "populate=*";
+/** Neutral layout shell when `VITE_MOCK_DATA=No` and Strapi fields are empty or unreachable. */
+export const emptySiteConfig: SiteConfig = {
+  siteName: "",
+  tagline: "",
+  logo: "",
+  phone: "",
+  email: "",
+  address: "",
+  workingHours: "",
+  googleMapsEmbed: "",
+  socialLinks: {},
+  showBlogSection: false,
+  showNewsSection: false,
+  commentsEnabled: false,
+  contactFormToEmail: "",
+  contactFormSendConfirmation: false,
+  bookingFormToEmail: "",
+  bookingFormSendConfirmation: false,
+  footerBrandExtra: "",
+  footerColumns: [],
+  footerCertStripTitle: "",
+  footerPrivacyLinkLabel: "",
+  footerCopyrightExtra: "",
+  footerMapPlaceholderLabel: "",
+  footerLegacyQuickTitle: "",
+  footerLegacyServicesTitle: "",
+  footerLegacyHelpTitle: "",
+  footerLegacyHelpBody: "",
+  quickContactSectionTitle: "",
+  quickContactSectionBody: "",
+  quickContactFormHeading: "",
+  quickContactSuccessHeading: "",
+  quickContactSuccessBody: "",
+  quickContactIframeTitle: "",
+};
+
+const SITE_CONFIG_POPULATE = [
+  "populate=*",
+  "populate[footerColumns][populate][links]=*",
+  "populate[defaultSeo][populate][openGraphImage][fields][0]=url",
+  "populate[defaultSeo][populate][openGraphImage][fields][1]=alternativeText",
+].join("&");
 
 export const siteConfigApi = {
   get: () => strapiGet(`site-config?${SITE_CONFIG_POPULATE}`, defaultSiteConfig, (raw) => mapSiteConfig(raw, defaultSiteConfig)),
@@ -907,6 +1268,8 @@ export interface HeroSlide {
   title?: string;
   /** Per-slide body (Strapi `hero.slide`); falls back to hero subtitle in UI when absent. */
   text?: string;
+  /** Per-slide CTAs from Strapi `hero.slide.ctaButtons`; unlimited. If empty, UI uses hero-level `ctaButtons` fallback. */
+  ctaButtons?: { label: string; href: string; variant: "primary" | "secondary" }[];
 }
 
 export interface PageHero {
@@ -914,6 +1277,7 @@ export interface PageHero {
   title: string;
   subtitle: string;
   slides: HeroSlide[];
+  /** Fallback CTAs when a slide (or promo video) has none; prefer per-slide `HeroSlide.ctaButtons`. */
   ctaButtons?: { label: string; href: string; variant: "primary" | "secondary" }[];
   /** Optional background / loop video (Strapi `promoVideo`). */
   promoVideoUrl?: string;
@@ -925,6 +1289,7 @@ const HERO_POPULATE = [
   "populate[slideItems][populate][image][fields][0]=url",
   "populate[slideItems][populate][image][fields][1]=name",
   "populate[slideItems][populate][image][fields][2]=alternativeText",
+  "populate[slideItems][populate][ctaButtons]=true",
   "populate[ctaButtons]=true",
   "populate[promoVideo]=true",
   "populate[seo][populate][openGraphImage][fields][0]=url",
@@ -941,6 +1306,35 @@ export const heroApi = {
 };
 
 const SERVICE_POPULATE = "populate=*";
+
+export interface ServiceCategoryEntry {
+  name: string;
+  slug: string;
+  sortOrder: number;
+}
+
+function mapServiceCategoryEntries(raw: unknown): ServiceCategoryEntry[] {
+  const list = unwrapStrapiCollection(raw);
+  if (list.length === 0) return [];
+  return list
+    .map((row) => ({
+      name: String(row.name ?? "").trim(),
+      slug: String(row.slug ?? "").trim(),
+      sortOrder: Number(row.sortOrder ?? 0),
+    }))
+    .filter((r) => r.name)
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+}
+
+/** Published service categories for filter tabs (order from `sortOrder`). */
+export const serviceCategoriesApi = {
+  getAll: () =>
+    strapiGet<ServiceCategoryEntry[]>(
+      "service-categories?sort=sortOrder:asc",
+      [],
+      (raw) => mapServiceCategoryEntries(raw)
+    ),
+};
 
 // ── Services ──
 export const servicesApi = {
@@ -961,6 +1355,11 @@ export interface BlogArticle {
   image: string;
   date: string;
   category: string;
+  isFeatured?: boolean;
+  commentsOpen?: boolean;
+  author?: PostAuthor;
+  /** Approximate reading time from body length (~200 wpm). */
+  readMinutes?: number;
   content?: string;
   seo?: PageSeo;
 }
@@ -971,14 +1370,19 @@ export const blogApi = {
   getAll: (mockData: BlogArticle[]) =>
     strapiGet<BlogArticle[]>(`articles?${ARTICLE_POPULATE}&sort=date:desc`, mockData, (raw) => {
       const m = mapBlogArticles(raw);
-      return m.length ? m : mockData;
+      if (m.length > 0) return m;
+      return IS_MOCK_DATA_ENABLED ? mockData : [];
     }),
   getBySlug: (slug: string, mockData: BlogArticle[]) => {
     const fb = mockData.find((a) => a.slug === slug);
     return strapiGet<BlogArticle | undefined>(
       `articles?filters[slug][$eq]=${encodeURIComponent(slug)}&${ARTICLE_POPULATE}`,
       fb,
-      (raw) => mapBlogArticles(raw)[0] ?? fb
+      (raw) => {
+        const found = mapBlogArticles(raw)[0];
+        if (found) return found;
+        return IS_MOCK_DATA_ENABLED ? fb : undefined;
+      }
     );
   },
 };
@@ -992,6 +1396,10 @@ export interface NewsPost {
   image: string;
   date: string;
   category: string;
+  isFeatured?: boolean;
+  commentsOpen?: boolean;
+  author?: PostAuthor;
+  readMinutes?: number;
   content?: string;
   seo?: PageSeo;
 }
@@ -1002,15 +1410,82 @@ export const newsApi = {
   getAll: (mockData: NewsPost[]) =>
     strapiGet<NewsPost[]>(`news-posts?${NEWS_POST_POPULATE}&sort=date:desc`, mockData, (raw) => {
       const m = mapNewsPosts(raw);
-      return m.length ? m : mockData;
+      if (m.length > 0) return m;
+      return IS_MOCK_DATA_ENABLED ? mockData : [];
     }),
   getBySlug: (slug: string, mockData: NewsPost[]) => {
     const fb = mockData.find((n) => n.slug === slug);
     return strapiGet<NewsPost | undefined>(
       `news-posts?filters[slug][$eq]=${encodeURIComponent(slug)}&${NEWS_POST_POPULATE}`,
       fb,
-      (raw) => mapNewsPosts(raw)[0] ?? fb
+      (raw) => {
+        const found = mapNewsPosts(raw)[0];
+        if (found) return found;
+        return IS_MOCK_DATA_ENABLED ? fb : undefined;
+      }
     );
+  },
+};
+
+// ── Comments (public read approved + submit) ──
+export interface PublicComment {
+  documentId: string;
+  authorName: string;
+  body: string;
+  createdAt?: string;
+}
+
+function mapPublicCommentList(raw: unknown): PublicComment[] {
+  const list = Array.isArray(raw) ? raw : unwrapStrapiCollection(raw);
+  const out: PublicComment[] = [];
+  for (const row of list) {
+    const f = flattenStrapiEntity(row) ?? (row as Record<string, unknown>);
+    const authorName = String(f.authorName ?? "").trim();
+    const body = String(f.body ?? "").trim();
+    if (!authorName || !body) continue;
+    out.push({
+      documentId: String(f.documentId ?? f.id ?? ""),
+      authorName,
+      body,
+      createdAt: f.createdAt != null ? String(f.createdAt) : undefined,
+    });
+  }
+  return out;
+}
+
+export const commentsApi = {
+  getApproved: async (postType: "article" | "news-post", targetSlug: string): Promise<PublicComment[]> => {
+    if (!STRAPI_BASE_URL) return [];
+    try {
+      const qs = `postType=${encodeURIComponent(postType)}&targetSlug=${encodeURIComponent(targetSlug)}`;
+      const res = await fetch(`${STRAPI_BASE_URL}/api/comments/approved?${qs}`, { cache: "no-store" });
+      if (!res.ok) return [];
+      const json = (await res.json()) as { data?: unknown };
+      return mapPublicCommentList(json.data ?? []);
+    } catch {
+      return [];
+    }
+  },
+  submit: async (payload: {
+    postType: "article" | "news-post";
+    targetSlug: string;
+    authorName: string;
+    authorEmail?: string;
+    body: string;
+  }): Promise<{ ok: boolean; error?: string }> => {
+    if (!STRAPI_BASE_URL) return { ok: false, error: "Strapi not configured" };
+    try {
+      const res = await fetch(`${STRAPI_BASE_URL}/api/comments/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) return { ok: false, error: json.error || res.statusText };
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
   },
 };
 
@@ -1091,10 +1566,260 @@ export const servicePackagesApi = {
     ),
 };
 
-// ── FAQs ──
+/** Load linked Hero `page` only (FAQ list does not need full hero payload). */
+const FAQ_SITE_PAGE_POPULATE = "populate[sitePage][fields][0]=page";
+
+// ── FAQs: `sitePage` → published Hero (Admin relation picker; Hero `page` = route key) ──
 export const faqsApi = {
+  /** All FAQs from Strapi. Prefer `getByPage` for list pages. */
   getAll: () =>
-    strapiGet<FAQItem[]>("faqs?populate=*&sort=order:asc", defaultFAQs, (raw) => mapFAQItems(raw, defaultFAQs)),
+    strapiGet<FAQItem[]>(
+      `faqs?${FAQ_SITE_PAGE_POPULATE}&sort=order:asc`,
+      FAQ_MOCK_ALL,
+      (raw) => mapFAQItems(raw, FAQ_MOCK_ALL)
+    ),
+  /** FAQs for one route; matches Hero `page` via relation `sitePage`. */
+  getByPage: (page: string) => {
+    const fb = faqFallbackForPage(page);
+    return strapiGet<FAQItem[]>(
+      `faqs?filters[sitePage][page][$eq]=${encodeURIComponent(page)}&${FAQ_SITE_PAGE_POPULATE}&sort=order:asc`,
+      fb,
+      (raw) => mapFAQItems(raw, fb)
+    );
+  },
+};
+
+export type ContactFormKey = "contact_page" | "home_quick";
+
+export const contactSubmissionsApi = {
+  submit: async (payload: {
+    formKey: ContactFormKey;
+    name: string;
+    email: string;
+    phone?: string;
+    serviceInterest?: string;
+    message: string;
+  }): Promise<{ ok: boolean; error?: string }> => {
+    if (!STRAPI_BASE_URL) return { ok: false, error: "Strapi is not configured." };
+    try {
+      const res = await fetch(`${STRAPI_BASE_URL}/api/contact-submissions/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) return { ok: false, error: json.error || res.statusText };
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  },
+};
+
+export const bookingRequestsApi = {
+  /** Returns time-slot strings already taken for `date` (YYYY-MM-DD), excluding cancelled bookings. */
+  getBookedSlotsForDate: async (date: string): Promise<string[]> => {
+    if (!STRAPI_BASE_URL) return [];
+    try {
+      const q = encodeURIComponent(date);
+      const res = await fetch(`${STRAPI_BASE_URL}/api/booking-requests/availability?date=${q}`, {
+        cache: "no-store",
+      });
+      const json = (await res.json().catch(() => ({}))) as { bookedSlots?: string[]; error?: string };
+      if (!res.ok) return [];
+      return Array.isArray(json.bookedSlots) ? json.bookedSlots : [];
+    } catch {
+      return [];
+    }
+  },
+  submit: async (payload: {
+    patientName: string;
+    email: string;
+    phone: string;
+    serviceId: string;
+    serviceTitle?: string;
+    appointmentDate: string;
+    timeSlot: string;
+  }): Promise<{ ok: boolean; error?: string; conflict?: boolean }> => {
+    if (!STRAPI_BASE_URL) return { ok: false, error: "Strapi is not configured." };
+    try {
+      const res = await fetch(`${STRAPI_BASE_URL}/api/booking-requests/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (res.status === 409) return { ok: false, error: json.error || "This time slot is no longer available.", conflict: true };
+      if (!res.ok) return { ok: false, error: json.error || res.statusText };
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  },
+};
+
+function parseContentDispositionFilename(header: string | null): string | undefined {
+  if (!header) return undefined;
+  const m = /filename\*?=(?:UTF-8''|")?([^";\n]+)/i.exec(header);
+  if (m?.[1]) return decodeURIComponent(m[1].replace(/"/g, "").trim());
+  return undefined;
+}
+
+export interface StaffUser {
+  id: number;
+  username: string;
+  email: string;
+  roleType: string;
+}
+
+function unwrapStrapiUserMe(json: unknown): Record<string, unknown> | null {
+  if (!json || typeof json !== "object") return null;
+  const j = json as Record<string, unknown>;
+  if (j.data && typeof j.data === "object") {
+    const d = j.data as Record<string, unknown>;
+    const attrs =
+      typeof d.attributes === "object" && d.attributes !== null
+        ? (d.attributes as Record<string, unknown>)
+        : {};
+    const id = Number(d.id ?? attrs.id);
+    const roleRaw = attrs.role ?? d.role;
+    return { id, ...attrs, role: roleRaw };
+  }
+  return j;
+}
+
+function parseRoleType(roleRaw: unknown): string {
+  if (roleRaw == null) return "";
+  if (typeof roleRaw === "object") {
+    const r = roleRaw as Record<string, unknown>;
+    if (r.data && typeof r.data === "object") {
+      const d = r.data as Record<string, unknown>;
+      const attrs =
+        typeof d.attributes === "object" && d.attributes !== null
+          ? (d.attributes as Record<string, unknown>)
+          : {};
+      return String(attrs.type ?? d.type ?? "").trim();
+    }
+    return String(r.type ?? "").trim();
+  }
+  return "";
+}
+
+export const staffAuthApi = {
+  loginLocal: async (
+    identifier: string,
+    password: string,
+  ): Promise<{ ok: true; jwt: string } | { ok: false; error: string }> => {
+    if (!STRAPI_BASE_URL) return { ok: false, error: "Strapi is not configured." };
+    try {
+      const res = await fetch(`${STRAPI_BASE_URL}/api/lab-report-files/staff-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: identifier.trim(), password }),
+      });
+      const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      if (!res.ok) {
+        const errObj = json.error as Record<string, unknown> | undefined;
+        let msg = "Invalid email/username or password.";
+        if (typeof errObj?.message === "string") msg = errObj.message;
+        else if (Array.isArray(errObj?.message)) {
+          const first = (errObj.message as unknown[])[0] as Record<string, unknown> | undefined;
+          const inner = first?.messages as unknown[] | undefined;
+          const m0 = inner?.[0] as Record<string, unknown> | undefined;
+          if (typeof m0?.message === "string") msg = m0.message;
+        } else if (typeof json.message === "string") msg = json.message;
+        return { ok: false, error: msg };
+      }
+      const jwt = String(json.jwt ?? "");
+      if (!jwt) return { ok: false, error: "Login failed (no token)." };
+      return { ok: true, jwt };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  },
+
+  fetchMe: async (jwt: string): Promise<StaffUser | null> => {
+    if (!STRAPI_BASE_URL || !jwt) return null;
+    try {
+      const res = await fetch(`${STRAPI_BASE_URL}/api/users/me?populate=role`, {
+        headers: { Authorization: `Bearer ${jwt}` },
+        cache: "no-store",
+      });
+      if (!res.ok) return null;
+      const raw = await res.json();
+      const flat = unwrapStrapiUserMe(raw);
+      if (!flat) return null;
+      const id = Number(flat.id);
+      if (!Number.isFinite(id)) return null;
+      const roleType = parseRoleType(flat.role);
+      return {
+        id,
+        username: String(flat.username ?? ""),
+        email: String(flat.email ?? ""),
+        roleType,
+      };
+    } catch {
+      return null;
+    }
+  },
+};
+
+export const labReportFilesApi = {
+  /** Staff bulk upload: JWT from Lab staff login; multipart field name must be `files`. */
+  uploadOne: async (
+    jwt: string,
+    payload: { file: File; passportNumber: string; phoneNumber: string },
+  ): Promise<{ ok: boolean; error?: string }> => {
+    if (!STRAPI_BASE_URL) return { ok: false, error: "Strapi is not configured." };
+    const fd = new FormData();
+    fd.append("files", payload.file);
+    fd.append("passportNumber", payload.passportNumber.trim());
+    fd.append("phoneNumber", payload.phoneNumber.trim());
+    try {
+      const res = await fetch(`${STRAPI_BASE_URL}/api/lab-report-files/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${jwt.trim()}` },
+        body: fd,
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (res.status === 401 || res.status === 403) {
+        return { ok: false, error: json.error || "Not authorized. Sign in with a Lab staff account." };
+      }
+      if (!res.ok) return { ok: false, error: json.error || res.statusText };
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  },
+
+  /** Public: verify passport + phone and receive PDF bytes. */
+  download: async (
+    passportNumber: string,
+    phoneNumber: string,
+  ): Promise<
+    | { ok: true; blob: Blob; filename?: string }
+    | { ok: false; notFound: true }
+    | { ok: false; error: string }
+  > => {
+    if (!STRAPI_BASE_URL) return { ok: false, error: "Strapi is not configured." };
+    try {
+      const res = await fetch(`${STRAPI_BASE_URL}/api/lab-report-files/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passportNumber: passportNumber.trim(), phoneNumber: phoneNumber.trim() }),
+      });
+      if (res.status === 404) return { ok: false, notFound: true };
+      if (!res.ok) {
+        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        return { ok: false, error: json.error || res.statusText };
+      }
+      const blob = await res.blob();
+      const filename = parseContentDispositionFilename(res.headers.get("Content-Disposition"));
+      return { ok: true, blob, filename };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
+  },
 };
 
 // ── Certifications ──
@@ -1201,22 +1926,22 @@ export interface ServiceComparisonRow {
 }
 
 export interface ServicesPageConfig {
-  categories: string[];
   comparison: ServiceComparisonRow[];
 }
 
 export const defaultServicesPageConfig: ServicesPageConfig = {
-  categories: defaultServiceCategories,
   comparison: defaultComparisonData,
 };
 
-function mapServicesPageConfig(raw: unknown, defaults: ServicesPageConfig): ServicesPageConfig {
-  const flat = flattenStrapiEntity(raw);
-  if (!flat) return defaults;
+export function getEmptyServicesPageConfig(): ServicesPageConfig {
+  return { comparison: [] };
+}
 
-  const categories = Array.isArray(flat.categories)
-    ? flat.categories.map((x) => String(x).trim()).filter(Boolean)
-    : defaults.categories;
+function mapServicesPageConfig(raw: unknown, defaults: ServicesPageConfig): ServicesPageConfig {
+  const base = IS_MOCK_DATA_ENABLED ? defaults : { comparison: [] as ServiceComparisonRow[] };
+  const flat = flattenStrapiEntity(raw);
+  if (!flat) return base;
+
   const rows = normalizeComponentList(flat.comparisonRows)
     .map((r) => ({
       feature: String(r.feature ?? "").trim(),
@@ -1228,8 +1953,7 @@ function mapServicesPageConfig(raw: unknown, defaults: ServicesPageConfig): Serv
     .filter((r) => r.feature);
 
   return {
-    categories: categories.length > 0 ? categories : defaults.categories,
-    comparison: rows.length > 0 ? rows : defaults.comparison,
+    comparison: rows.length > 0 ? rows : base.comparison,
   };
 }
 
@@ -1242,6 +1966,10 @@ export interface BookingPageConfig {
   seo?: PageSeo;
 }
 
+export function getEmptyBookingPageConfig(): BookingPageConfig {
+  return { timeSlots: [] };
+}
+
 export const defaultBookingPageConfig: BookingPageConfig = {
   timeSlots: [
     "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
@@ -1251,19 +1979,28 @@ export const defaultBookingPageConfig: BookingPageConfig = {
 };
 
 function mapBookingPageConfig(raw: unknown, defaults: BookingPageConfig): BookingPageConfig {
+  const base = IS_MOCK_DATA_ENABLED ? defaults : { timeSlots: [] as string[] };
   const flat = flattenStrapiEntity(raw);
-  if (!flat) return defaults;
-  const timeSlots = Array.isArray(flat.timeSlots)
+  if (!flat) return base;
+  const fromLines = mapSimpleLineTexts(flat.timeSlotLines);
+  const legacySlots = Array.isArray(flat.timeSlots)
     ? flat.timeSlots.map((x) => String(x).trim()).filter(Boolean)
-    : defaults.timeSlots;
+    : [];
+  const timeSlots =
+    fromLines.length > 0 ? fromLines : legacySlots.length > 0 ? legacySlots : base.timeSlots;
   return {
-    timeSlots: timeSlots.length > 0 ? timeSlots : defaults.timeSlots,
-    seo: mapPageSeo(flat.seo) ?? defaults.seo,
+    timeSlots: timeSlots.length > 0 ? timeSlots : base.timeSlots,
+    seo: mapPageSeo(flat.seo) ?? base.seo,
   };
 }
 
 export const bookingPageApi = {
-  get: () => strapiGet("booking-page?populate[seo][populate]=openGraphImage", defaultBookingPageConfig, (raw) => mapBookingPageConfig(raw, defaultBookingPageConfig)),
+  get: () =>
+    strapiGet(
+      "booking-page?populate[timeSlotLines]=true&populate[seo][populate]=openGraphImage",
+      defaultBookingPageConfig,
+      (raw) => mapBookingPageConfig(raw, defaultBookingPageConfig)
+    ),
 };
 
 export interface ReportPageConfig {
@@ -1274,6 +2011,15 @@ export interface ReportPageConfig {
   seo?: PageSeo;
 }
 
+export function getEmptyReportPageConfig(): ReportPageConfig {
+  return {
+    samplePatientName: "",
+    sampleReportDate: "",
+    sampleStatus: "",
+    supportPhone: "",
+  };
+}
+
 export const defaultReportPageConfig: ReportPageConfig = {
   samplePatientName: "Mohammad Rahman",
   sampleReportDate: "April 10, 2026",
@@ -1282,14 +2028,22 @@ export const defaultReportPageConfig: ReportPageConfig = {
 };
 
 function mapReportPageConfig(raw: unknown, defaults: ReportPageConfig): ReportPageConfig {
+  const base = IS_MOCK_DATA_ENABLED
+    ? defaults
+    : {
+        samplePatientName: "",
+        sampleReportDate: "",
+        sampleStatus: "",
+        supportPhone: "",
+      };
   const flat = flattenStrapiEntity(raw);
-  if (!flat) return defaults;
+  if (!flat) return base;
   return {
-    samplePatientName: String(flat.samplePatientName ?? defaults.samplePatientName),
-    sampleReportDate: String(flat.sampleReportDate ?? defaults.sampleReportDate),
-    sampleStatus: String(flat.sampleStatus ?? defaults.sampleStatus),
-    supportPhone: String(flat.supportPhone ?? defaults.supportPhone),
-    seo: mapPageSeo(flat.seo) ?? defaults.seo,
+    samplePatientName: String(flat.samplePatientName ?? base.samplePatientName),
+    sampleReportDate: String(flat.sampleReportDate ?? base.sampleReportDate),
+    sampleStatus: String(flat.sampleStatus ?? base.sampleStatus),
+    supportPhone: String(flat.supportPhone ?? base.supportPhone),
+    seo: mapPageSeo(flat.seo) ?? base.seo,
   };
 }
 
@@ -1310,6 +2064,15 @@ export interface ScreeningProcessPageConfig {
   totalTimeLabel: string;
   steps: ScreeningProcessStep[];
   seo?: PageSeo;
+}
+
+export function getEmptyScreeningProcessPageConfig(): ScreeningProcessPageConfig {
+  return {
+    checklistTitle: "",
+    checklistDescription: "",
+    totalTimeLabel: "",
+    steps: [],
+  };
 }
 
 export const defaultScreeningProcessPageConfig: ScreeningProcessPageConfig = {
@@ -1343,30 +2106,45 @@ export const defaultScreeningProcessPageConfig: ScreeningProcessPageConfig = {
 };
 
 function mapScreeningProcessPageConfig(raw: unknown, defaults: ScreeningProcessPageConfig): ScreeningProcessPageConfig {
+  const base = IS_MOCK_DATA_ENABLED
+    ? defaults
+    : {
+        checklistTitle: "",
+        checklistDescription: "",
+        totalTimeLabel: "",
+        steps: [] as ScreeningProcessStep[],
+      };
   const flat = flattenStrapiEntity(raw);
-  if (!flat) return defaults;
+  if (!flat) return base;
   const stepRows = normalizeComponentList(flat.steps)
-    .map((r) => ({
-      title: String(r.title ?? "").trim(),
-      description: String(r.description ?? "").trim(),
-      estimatedTime: String(r.estimatedTime ?? "").trim(),
-      details: Array.isArray(r.details) ? r.details.map((x) => String(x).trim()).filter(Boolean) : [],
-    }))
+    .map((r) => {
+      const fromLines = mapSimpleLineTexts(r.detailLines);
+      const legacyDetails = Array.isArray(r.details)
+        ? r.details.map((x) => String(x).trim()).filter(Boolean)
+        : [];
+      const details = fromLines.length > 0 ? fromLines : legacyDetails;
+      return {
+        title: String(r.title ?? "").trim(),
+        description: String(r.description ?? "").trim(),
+        estimatedTime: String(r.estimatedTime ?? "").trim(),
+        details,
+      };
+    })
     .filter((s) => s.title);
 
   return {
-    checklistTitle: String(flat.checklistTitle ?? defaults.checklistTitle),
-    checklistDescription: String(flat.checklistDescription ?? defaults.checklistDescription),
-    totalTimeLabel: String(flat.totalTimeLabel ?? defaults.totalTimeLabel),
-    steps: stepRows.length > 0 ? stepRows : defaults.steps,
-    seo: mapPageSeo(flat.seo) ?? defaults.seo,
+    checklistTitle: String(flat.checklistTitle ?? base.checklistTitle),
+    checklistDescription: String(flat.checklistDescription ?? base.checklistDescription),
+    totalTimeLabel: String(flat.totalTimeLabel ?? base.totalTimeLabel),
+    steps: stepRows.length > 0 ? stepRows : base.steps,
+    seo: mapPageSeo(flat.seo) ?? base.seo,
   };
 }
 
 export const screeningProcessPageApi = {
   get: () =>
     strapiGet(
-      "screening-process-page?populate=steps&populate[seo][populate]=openGraphImage",
+      "screening-process-page?populate[steps][populate]=detailLines&populate[seo][populate]=openGraphImage",
       defaultScreeningProcessPageConfig,
       (raw) => mapScreeningProcessPageConfig(raw, defaultScreeningProcessPageConfig)
     ),
@@ -1374,12 +2152,24 @@ export const screeningProcessPageApi = {
 
 export interface PrivacyPageConfig {
   title: string;
+  /** Intro copy (markdown / rich); shown above sections. */
+  intro: string;
+  /** Contact block (markdown); shown after sections. */
+  contactBlock: string;
   sections: { heading: string; body: string }[];
   seo?: PageSeo;
 }
 
+export function getEmptyPrivacyPageConfig(): PrivacyPageConfig {
+  return { title: "", intro: "", contactBlock: "", sections: [] };
+}
+
 export const defaultPrivacyPageConfig: PrivacyPageConfig = {
   title: "Privacy Policy",
+  intro:
+    "At Unicare Medical Services, we are committed to protecting the privacy and confidentiality of your personal and medical information.",
+  contactBlock:
+    "For privacy-related inquiries, contact us at [unicaremedicalbd@gmail.com](mailto:unicaremedicalbd@gmail.com).",
   sections: [
     {
       heading: "Information We Collect",
@@ -1397,20 +2187,67 @@ export const defaultPrivacyPageConfig: PrivacyPageConfig = {
 };
 
 function mapPrivacyPageConfig(raw: unknown, defaults: PrivacyPageConfig): PrivacyPageConfig {
+  const base = IS_MOCK_DATA_ENABLED
+    ? defaults
+    : { title: "", intro: "", contactBlock: "", sections: [] as { heading: string; body: string }[] };
   const flat = flattenStrapiEntity(raw);
-  if (!flat) return defaults;
+  if (!flat) return base;
   const sections = normalizeComponentList(flat.sections)
     .map((s) => ({ heading: String(s.heading ?? "").trim(), body: String(s.body ?? "").trim() }))
     .filter((s) => s.heading && s.body);
+  const intro = strapiRichOrTextToMarkdown(flat.intro) || base.intro;
+  const contactBlock = strapiRichOrTextToMarkdown(flat.contactBlock) || base.contactBlock;
   return {
-    title: String(flat.title ?? defaults.title),
-    sections: sections.length > 0 ? sections : defaults.sections,
-    seo: mapPageSeo(flat.seo) ?? defaults.seo,
+    title: String(flat.title ?? base.title),
+    intro,
+    contactBlock,
+    sections: sections.length > 0 ? sections : base.sections,
+    seo: mapPageSeo(flat.seo) ?? base.seo,
   };
 }
 
 export const privacyPageApi = {
-  get: () => strapiGet("privacy-page?populate=sections&populate[seo][populate]=openGraphImage", defaultPrivacyPageConfig, (raw) => mapPrivacyPageConfig(raw, defaultPrivacyPageConfig)),
+  get: () =>
+    strapiGet(
+      "privacy-page?populate=sections&populate[seo][populate][openGraphImage][fields][0]=url&populate[seo][populate][openGraphImage][fields][1]=alternativeText",
+      defaultPrivacyPageConfig,
+      (raw) => mapPrivacyPageConfig(raw, defaultPrivacyPageConfig)
+    ),
+};
+
+// ── Fitness page single (disclaimer + SEO) ──
+export interface FitnessPageConfig {
+  disclaimer: string;
+  seo?: PageSeo;
+}
+
+export function getEmptyFitnessPageConfig(): FitnessPageConfig {
+  return { disclaimer: "" };
+}
+
+export const defaultFitnessPageConfig: FitnessPageConfig = {
+  disclaimer:
+    "**Note:** These are standard GCC fitness criteria. Specific requirements may vary by destination country. Please consult our medical team for country-specific guidance.",
+};
+
+function mapFitnessPageConfig(raw: unknown, defaults: FitnessPageConfig): FitnessPageConfig {
+  const base = IS_MOCK_DATA_ENABLED ? defaults : getEmptyFitnessPageConfig();
+  const flat = flattenStrapiEntity(raw);
+  if (!flat) return base;
+  const disclaimer = strapiRichOrTextToMarkdown(flat.disclaimer) || base.disclaimer;
+  return {
+    disclaimer,
+    seo: mapPageSeo(flat.seo) ?? base.seo,
+  };
+}
+
+export const fitnessPageApi = {
+  get: () =>
+    strapiGet(
+      "fitness-page?populate[seo][populate][openGraphImage][fields][0]=url&populate[seo][populate][openGraphImage][fields][1]=alternativeText",
+      defaultFitnessPageConfig,
+      (raw) => mapFitnessPageConfig(raw, defaultFitnessPageConfig)
+    ),
 };
 
 // ── Unified API ───────────────────────────────────
@@ -1419,6 +2256,7 @@ export const api = {
   navigation: navigationApi,
   hero: heroApi,
   services: servicesApi,
+  serviceCategories: serviceCategoriesApi,
   blog: blogApi,
   news: newsApi,
   countryGuidelines: countryGuidelinesApi,
@@ -1439,4 +2277,9 @@ export const api = {
   reportPage: reportPageApi,
   screeningProcessPage: screeningProcessPageApi,
   privacyPage: privacyPageApi,
+  fitnessPage: fitnessPageApi,
+  comments: commentsApi,
+  contactSubmissions: contactSubmissionsApi,
+  bookingRequests: bookingRequestsApi,
+  labReportFiles: labReportFilesApi,
 };

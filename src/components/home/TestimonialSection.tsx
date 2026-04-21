@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { testimonials as defaultTestimonials, type Testimonial } from "@/data/mockData";
-import { api, IS_STRAPI_CONFIGURED } from "@/lib/api";
+import { api, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION } from "@/lib/api";
 
 const TestimonialSection = () => {
-  const [items, setItems] = useState<Testimonial[] | null>(IS_STRAPI_CONFIGURED ? null : defaultTestimonials);
+  const [items, setItems] = useState<Testimonial[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultTestimonials : IS_STRAPI_CONFIGURED ? null : []
+  );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
   const [current, setCurrent] = useState(0);
 

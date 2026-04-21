@@ -10,6 +10,7 @@ import ServiceDetail from "./pages/ServiceDetail.tsx";
 import About from "./pages/About.tsx";
 import BookAppointment from "./pages/BookAppointment.tsx";
 import ReportCheck from "./pages/ReportCheck.tsx";
+import LabReportBulkUpload from "./pages/LabReportBulkUpload.tsx";
 import ScreeningProcess from "./pages/ScreeningProcess.tsx";
 import FitnessPage from "./pages/FitnessPage.tsx";
 import EquipmentPage from "./pages/EquipmentPage.tsx";
@@ -21,6 +22,9 @@ import NewsPostPage from "./pages/NewsPost.tsx";
 import Privacy from "./pages/Privacy.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { StrapiLayoutProvider } from "@/contexts/StrapiLayoutContext";
+import { StaffAuthProvider } from "@/contexts/StaffAuthContext";
+import { SectionRoute } from "@/components/routing/SectionRoute";
+import StaffLogin from "./pages/StaffLogin.tsx";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +43,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
+        <StaffAuthProvider>
         <StrapiLayoutProvider>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -47,19 +52,50 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/book" element={<BookAppointment />} />
           <Route path="/reports" element={<ReportCheck />} />
+          <Route path="/staff/login" element={<StaffLogin />} />
+          <Route path="/staff/lab-reports" element={<LabReportBulkUpload />} />
           <Route path="/process" element={<ScreeningProcess />} />
           <Route path="/fitness" element={<FitnessPage />} />
           <Route path="/equipment" element={<EquipmentPage />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:slug" element={<BlogPost />} />
-          <Route path="/news" element={<News />} />
-          <Route path="/news/:slug" element={<NewsPostPage />} />
+          <Route
+            path="/blog"
+            element={
+              <SectionRoute section="blog">
+                <Blog />
+              </SectionRoute>
+            }
+          />
+          <Route
+            path="/blog/:slug"
+            element={
+              <SectionRoute section="blog">
+                <BlogPost />
+              </SectionRoute>
+            }
+          />
+          <Route
+            path="/news"
+            element={
+              <SectionRoute section="news">
+                <News />
+              </SectionRoute>
+            }
+          />
+          <Route
+            path="/news/:slug"
+            element={
+              <SectionRoute section="news">
+                <NewsPostPage />
+              </SectionRoute>
+            }
+          />
           <Route path="/privacy" element={<Privacy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
         </StrapiLayoutProvider>
+        </StaffAuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

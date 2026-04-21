@@ -4,6 +4,10 @@ export const newsPosts: NewsPost[] = [
   {
     id: "1",
     slug: "gamca-online-appointment-system-update",
+    isFeatured: true,
+    commentsOpen: true,
+    author: { name: "Unicare Editorial", slug: "unicare-editorial" },
+    readMinutes: 3,
     title: "GAMCA Online Appointment System Updated for 2026",
     excerpt: "The GCC Approved Medical Centers' Association has rolled out a new streamlined appointment booking portal effective April 2026.",
     image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop",

@@ -1,14 +1,25 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, ShieldAlert, AlertTriangle, Dumbbell } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
 import { RichText } from "@/components/content/RichText";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
 import { fitnessCriteria as defaultFitnessCriteria, type FitnessCriteria } from "@/data/mockData";
-import { api, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
+import {
+  api,
+  createEmptyPageHero,
+  defaultFitnessPageConfig,
+  formatPageTitle,
+  getEmptyFitnessPageConfig,
+  IS_STRAPI_CONFIGURED,
+  USE_LOCAL_MOCK_HYDRATION,
+  type FitnessPageConfig,
+  type PageHero,
+  type PageSeo,
+} from "@/lib/api";
 
 const categoryIcons: Record<string, React.ElementType> = {
   "Infectious Diseases — Must Be Negative / Non-Reactive": ShieldAlert,
@@ -26,25 +37,37 @@ const defaultFitnessHero: PageHero = {
     { src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1600&h=900&fit=crop", alt: "Medical screening" },
     { src: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=1600&h=900&fit=crop", alt: "Health certification" },
   ],
+  ctaButtons: [{ label: "Book Appointment", href: "/book", variant: "primary" }],
 };
 
 const FitnessPage = () => {
   const { pathname } = useLocation();
-  const [criteria, setCriteria] = useState<FitnessCriteria[] | null>(IS_STRAPI_CONFIGURED ? null : defaultFitnessCriteria);
-  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultFitnessHero);
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "Site";
+  const [criteria, setCriteria] = useState<FitnessCriteria[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultFitnessCriteria : IS_STRAPI_CONFIGURED ? null : []
+  );
+  const [hero, setHero] = useState<PageHero | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultFitnessHero : IS_STRAPI_CONFIGURED ? null : createEmptyPageHero("fitness")
+  );
+  const [fitnessPageConfig, setFitnessPageConfig] = useState<FitnessPageConfig | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultFitnessPageConfig : IS_STRAPI_CONFIGURED ? null : getEmptyFitnessPageConfig()
+  );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
 
   useEffect(() => {
     if (!IS_STRAPI_CONFIGURED) return;
     let cancelled = false;
     (async () => {
-      const [crit, h] = await Promise.all([
+      const [crit, h, fp] = await Promise.all([
         api.fitnessCriteria.getAll(),
         api.hero.getByPage("fitness", defaultFitnessHero),
+        api.fitnessPage.get(),
       ]);
       if (!cancelled) {
         setCriteria(crit);
         setHero(h);
+        setFitnessPageConfig(fp);
         setReady(true);
       }
     })();
@@ -53,12 +76,16 @@ const FitnessPage = () => {
     };
   }, []);
 
-  if (!ready || !criteria || !hero) {
+  const disclaimer =
+    fitnessPageConfig?.disclaimer?.trim() ||
+    (!IS_STRAPI_CONFIGURED && USE_LOCAL_MOCK_HYDRATION ? defaultFitnessPageConfig.disclaimer : "");
+
+  if (!ready || !criteria || !hero || fitnessPageConfig === null) {
     return (
       <Layout>
         <SeoHelmet
-          layers={hero?.seo ? [hero.seo] : []}
-          fallbackTitle="Fitness Criteria — Unicare Medical, Dhaka"
+          layers={[hero?.seo, fitnessPageConfig?.seo].filter((x): x is PageSeo => Boolean(x))}
+          fallbackTitle={formatPageTitle("Fitness Criteria", siteName)}
           fallbackDescription={hero?.subtitle ?? defaultFitnessHero.subtitle}
           pathForCanonical={pathname}
         />
@@ -76,33 +103,32 @@ const FitnessPage = () => {
   return (
     <Layout>
       <SeoHelmet
-        layers={[hero.seo]}
-        fallbackTitle="Fitness Criteria — Unicare Medical, Dhaka"
+        layers={[hero.seo, fitnessPageConfig.seo].filter((x): x is PageSeo => Boolean(x))}
+        fallbackTitle={formatPageTitle(hero.title || "Fitness Criteria", siteName)}
         fallbackDescription={hero.subtitle}
         pathForCanonical={pathname}
       />
-      <PageHeroSlider images={hero.slides} title={hero.title} subtitle={hero.subtitle}>
-        <div className="mt-[24px] flex justify-center">
-          <Link to="/book">
-            <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">
-              Book Appointment
-            </Button>
-          </Link>
-        </div>
-      </PageHeroSlider>
+      <PageHeroSlider
+        images={hero.slides}
+        fallbackCtaButtons={hero.ctaButtons}
+        title={hero.title}
+        subtitle={hero.subtitle}
+      />
 
       <PageBreadcrumb items={[{ label: "Fitness Criteria" }]} />
 
       <section className="py-[48px]">
         <div className="container max-w-4xl">
-          <div className="mb-[32px] overflow-hidden rounded-lg">
-            <img
-              src={hero.slides[0]?.src ?? "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=900&h=350&fit=crop"}
-              alt={hero.slides[0]?.alt ?? "Medical professional reviewing health criteria"}
-              className="h-[250px] w-full object-cover"
-              loading="lazy"
-            />
-          </div>
+          {hero.slides[0]?.src ? (
+            <div className="mb-[32px] overflow-hidden rounded-lg">
+              <img
+                src={hero.slides[0].src}
+                alt={hero.slides[0].alt || "Fitness criteria"}
+                className="h-[250px] w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          ) : null}
 
           <div className="space-y-[32px]">
             {criteria.map((group, i) => {
@@ -131,12 +157,11 @@ const FitnessPage = () => {
             })}
           </div>
 
-          <div className="mt-[32px] rounded-lg bg-muted p-[24px] text-center">
-            <p className="font-body text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Note:</span> These are standard GCC fitness criteria. Specific
-              requirements may vary by destination country. Please consult our medical team for country-specific guidance.
-            </p>
-          </div>
+          {disclaimer ? (
+            <div className="mt-[32px] rounded-lg bg-muted p-[24px] text-center">
+              <RichText value={disclaimer} className="font-body text-sm text-muted-foreground [&_strong]:text-foreground" />
+            </div>
+          ) : null}
         </div>
       </section>
     </Layout>

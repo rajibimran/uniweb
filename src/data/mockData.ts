@@ -104,6 +104,7 @@ export const navItems: NavItem[] = [
     ],
   },
   { label: "News", href: "/news" },
+  { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -313,6 +314,23 @@ export const stats: StatItem[] = [
   { label: "Report Delivery", value: 24, suffix: "h" },
 ];
 
+/** FAQs for the home page (matches Strapi seed `page=home`). */
+export const homeFAQs: FAQItem[] = [
+  {
+    question: "What documents should I bring?",
+    answer:
+      "Valid passport, photos, and your GAMCA slip. Additional documents may apply by country.",
+  },
+  {
+    question: "How long does reporting take?",
+    answer: "Most results are available within 24–48 hours depending on the test panel.",
+  },
+  {
+    question: "Do you offer same-day appointments?",
+    answer: "Subject to slot availability. Please call or book online for the next opening.",
+  },
+];
+
 // FAQ updated for actual services
 export const serviceFAQs: FAQItem[] = [
   {
@@ -496,11 +514,17 @@ export const footerServices: FooterLink[] = [
 ];
 
 /** Fallback when Strapi is off; `logoUrl` empty shows text badge in UI. */
-export const certificationBadges: { name: string; logoUrl: string }[] = [
-  { name: "GAMCA", logoUrl: "" },
-  { name: "BMET", logoUrl: "" },
-  { name: "WHO", logoUrl: "" },
-  { name: "MOH Kuwait", logoUrl: "" },
-  { name: "MOH Saudi", logoUrl: "" },
-  { name: "MOH UAE", logoUrl: "" },
+export const certificationBadges: {
+  id: string;
+  name: string;
+  logoUrl: string;
+  shortDescription?: string;
+  verificationUrl?: string;
+}[] = [
+  { id: "mock-gamca", name: "GAMCA", logoUrl: "" },
+  { id: "mock-bmet", name: "BMET", logoUrl: "" },
+  { id: "mock-who", name: "WHO", logoUrl: "" },
+  { id: "mock-kuwait", name: "MOH Kuwait", logoUrl: "" },
+  { id: "mock-saudi", name: "MOH Saudi", logoUrl: "" },
+  { id: "mock-uae", name: "MOH UAE", logoUrl: "" },
 ];

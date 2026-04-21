@@ -8,16 +8,20 @@ import { SeoHelmet } from "@/components/seo/SeoHelmet";
 import { ServiceMark } from "@/components/service/ServiceMark";
 import { RichText } from "@/components/content/RichText";
 import { serviceDetails, type ServiceDetail, type ServiceCard } from "@/data/mockData";
-import { api, IS_STRAPI_CONFIGURED } from "@/lib/api";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
+import { api, formatPageTitle, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION } from "@/lib/api";
 
 type RelatedNav = { slug: string; title: string; category: string; icon: string; iconImage?: string };
 
 const ServicePage = () => {
   const { pathname } = useLocation();
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "Site";
   const { slug } = useParams<{ slug: string }>();
   const [service, setService] = useState<ServiceDetail | null | undefined>(() => {
     if (!slug) return null;
-    if (!IS_STRAPI_CONFIGURED) return serviceDetails[slug] ?? null;
+    if (USE_LOCAL_MOCK_HYDRATION) return serviceDetails[slug] ?? null;
+    if (!IS_STRAPI_CONFIGURED) return null;
     return undefined;
   });
   const [allCards, setAllCards] = useState<ServiceCard[]>([]);
@@ -33,7 +37,7 @@ const ServicePage = () => {
       return;
     }
     if (!IS_STRAPI_CONFIGURED) {
-      setService(serviceDetails[slug] ?? null);
+      setService(USE_LOCAL_MOCK_HYDRATION ? (serviceDetails[slug] ?? null) : null);
       return;
     }
     setService(undefined);
@@ -77,7 +81,7 @@ const ServicePage = () => {
       <Layout>
         <SeoHelmet
           layers={[]}
-          fallbackTitle="Loading service — Unicare Medical, Dhaka"
+          fallbackTitle={formatPageTitle("Loading service", siteName)}
           pathForCanonical={pathname}
         />
         <section className="relative min-h-[320px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading service" />
@@ -101,7 +105,7 @@ const ServicePage = () => {
       <Layout>
         <SeoHelmet
           layers={[]}
-          fallbackTitle="Service not found — Unicare Medical, Dhaka"
+          fallbackTitle={formatPageTitle("Service not found", siteName)}
           fallbackDescription="The requested service could not be found."
           pathForCanonical={pathname}
         />
@@ -124,7 +128,7 @@ const ServicePage = () => {
     <Layout>
       <SeoHelmet
         layers={[service.seo]}
-        fallbackTitle={`${service.title} — Unicare Medical, Dhaka`}
+        fallbackTitle={formatPageTitle(service.title, siteName)}
         fallbackDescription={service.description.slice(0, 200)}
         pathForCanonical={pathname}
       />

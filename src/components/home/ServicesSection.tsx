@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { RichText } from "@/components/content/RichText";
 import { ServiceMark } from "@/components/service/ServiceMark";
-import { api, IS_STRAPI_CONFIGURED } from "@/lib/api";
+import { api, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION } from "@/lib/api";
 import { services as defaultServices, type ServiceCard } from "@/data/mockData";
 
 const ServicesSection = () => {
-  const [items, setItems] = useState<ServiceCard[] | null>(IS_STRAPI_CONFIGURED ? null : defaultServices);
+  const [items, setItems] = useState<ServiceCard[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultServices : IS_STRAPI_CONFIGURED ? null : []
+  );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
 
   useEffect(() => {

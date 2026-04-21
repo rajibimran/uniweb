@@ -1,9 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import type { HeroSlide } from "@/lib/api";
 
-type HeroImageItem = { src: string; alt: string; title?: string; text?: string; kind?: "image" };
+type SlideMediaItem =
+  | (HeroSlide & { kind?: "image" })
+  | { src: string; alt: string; kind: "video"; title?: string; text?: string };
+
+export type HeroCtaItem = NonNullable<HeroSlide["ctaButtons"]>[number];
 
 interface PageHeroSliderProps {
-  images: HeroImageItem[];
+  images: HeroSlide[];
+  /** Fallback when the active slide (or promo video) has no `ctaButtons` (e.g. legacy hero-level CTAs). */
+  fallbackCtaButtons?: HeroCtaItem[];
   /** Fallback headline when a slide has no `title` (and for promo video). */
   title: string;
   /** Fallback subcopy when a slide has no `text`. */
@@ -15,6 +24,7 @@ interface PageHeroSliderProps {
 
 const PageHeroSlider = ({
   images,
+  fallbackCtaButtons,
   title,
   subtitle,
   children,
@@ -22,20 +32,36 @@ const PageHeroSlider = ({
   promoVideoUrl,
 }: PageHeroSliderProps) => {
   const [current, setCurrent] = useState(0);
-  const mediaItems = promoVideoUrl
-    ? [...images.map((img) => ({ ...img, kind: "image" as const })), { src: promoVideoUrl, alt: "Promotional video", kind: "video" as const }]
-    : images.map((img) => ({ ...img, kind: "image" as const }));
+  const mediaItems: SlideMediaItem[] = useMemo(() => {
+    const imgs = images.map((img) => ({ ...img, kind: "image" as const }));
+    if (promoVideoUrl) {
+      return [
+        ...imgs,
+        { src: promoVideoUrl, alt: "Promotional video", kind: "video" as const },
+      ];
+    }
+    return imgs;
+  }, [images, promoVideoUrl]);
 
   const overlay = (() => {
     const item = mediaItems[current];
     if (!item) return { headline: title, sub: subtitle };
     if ("kind" in item && item.kind === "video") return { headline: title, sub: subtitle };
-    const img = item as HeroImageItem;
+    const img = item as HeroSlide;
     return {
       headline: img.title?.trim() || title,
       sub: img.text?.trim() || subtitle,
     };
   })();
+
+  const ctasForCurrent = useMemo((): HeroCtaItem[] => {
+    const item = mediaItems[current];
+    if (!item) return fallbackCtaButtons ?? [];
+    if ("kind" in item && item.kind === "video") return fallbackCtaButtons ?? [];
+    const slide = item as HeroSlide;
+    if (slide.ctaButtons && slide.ctaButtons.length > 0) return slide.ctaButtons;
+    return fallbackCtaButtons ?? [];
+  }, [current, mediaItems, fallbackCtaButtons]);
 
   const len = Math.max(1, mediaItems.length);
   const next = useCallback(() => {
@@ -50,6 +76,9 @@ const PageHeroSlider = ({
 
   return (
     <section className={`relative flex ${height} items-center justify-center overflow-hidden`}>
+      {mediaItems.length === 0 ? (
+        <div className="absolute inset-0 bg-muted" aria-hidden />
+      ) : null}
       {mediaItems.map((item, i) =>
         item.kind === "video" ? (
           <video
@@ -91,15 +120,38 @@ const PageHeroSlider = ({
             {overlay.sub}
           </p>
         )}
+        {ctasForCurrent.length > 0 ? (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-[32px] sm:gap-4">
+            {ctasForCurrent.map((cta, i) => {
+              const external = /^https?:\/\//i.test(cta.href);
+              const className = `h-[48px] min-w-[160px] rounded-[4px] px-[24px] py-[12px] font-heading text-base font-semibold shadow-md sm:min-w-[200px] ${
+                cta.variant === "secondary"
+                  ? "bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                  : "bg-accent text-accent-foreground hover:bg-accent/90"
+              }`;
+              return (
+                <Button key={`${cta.href}-${cta.label}-${i}`} asChild className={className}>
+                  {external ? (
+                    <a href={cta.href} target="_blank" rel="noopener noreferrer">
+                      {cta.label}
+                    </a>
+                  ) : (
+                    <Link to={cta.href}>{cta.label}</Link>
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+        ) : null}
         {children}
       </div>
 
-      {/* Slider dots */}
       {mediaItems.length > 1 && (
         <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-[8px] sm:bottom-[24px]">
           {mediaItems.map((_, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => setCurrent(i)}
               className={`h-[10px] w-[10px] rounded-full transition-colors ${
                 i === current ? "bg-white" : "bg-white/40"

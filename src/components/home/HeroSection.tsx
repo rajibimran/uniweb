@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
-import { api, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
+import { api, createEmptyPageHero, formatPageTitle, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION, type PageHero } from "@/lib/api";
 
 const defaultHomeHero: PageHero = {
   page: "home",
@@ -16,24 +15,34 @@ const defaultHomeHero: PageHero = {
       alt: "Professional medical facility interior",
       title: "GCC Approved Medical Center",
       text: "Trusted for comprehensive health screening, medical checkups, and overseas employment certification in Dhaka, Bangladesh.",
+      ctaButtons: [
+        { label: "Book Appointment", href: "/book", variant: "primary" },
+        { label: "Check Report", href: "/reports", variant: "secondary" },
+      ],
     },
     {
       src: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=1600&h=900&fit=crop",
       alt: "Modern diagnostic laboratory",
       title: "Advanced diagnostics",
       text: "Digital imaging and accredited laboratory testing to meet GCC medical standards.",
+      ctaButtons: [{ label: "Our Services", href: "/services", variant: "primary" }],
     },
     {
       src: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=1600&h=900&fit=crop",
       alt: "Medical consultation room",
       title: "Patient-centered care",
       text: "Experienced staff guiding you through every step of screening and certification.",
+      ctaButtons: [{ label: "Contact Us", href: "/contact", variant: "secondary" }],
     },
   ],
 };
 
 const HeroSection = () => {
-  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultHomeHero);
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "";
+  const [hero, setHero] = useState<PageHero | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultHomeHero : IS_STRAPI_CONFIGURED ? null : createEmptyPageHero("home")
+  );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
 
   useEffect(() => {
@@ -52,11 +61,12 @@ const HeroSection = () => {
   }, []);
 
   if (!ready || !hero) {
+    const homePart = defaultHomeHero.title;
     return (
       <>
         <SeoHelmet
           layers={[]}
-          fallbackTitle="Unicare Medical, Dhaka — GCC Approved Medical Center"
+          fallbackTitle={siteName ? `${siteName} — ${homePart}` : formatPageTitle(homePart, siteName)}
           fallbackDescription={defaultHomeHero.subtitle}
           pathForCanonical="/"
         />
@@ -73,45 +83,18 @@ const HeroSection = () => {
     <>
       <SeoHelmet
         layers={[hero.seo]}
-        fallbackTitle={`Unicare Medical, Dhaka — ${hero.title}`}
+        fallbackTitle={siteName ? `${siteName} — ${hero.title}` : formatPageTitle(hero.title, siteName)}
         fallbackDescription={hero.subtitle}
         pathForCanonical="/"
       />
       <PageHeroSlider
         images={hero.slides}
+        fallbackCtaButtons={hero.ctaButtons}
         promoVideoUrl={hero.promoVideoUrl}
         title={hero.title}
         subtitle={hero.subtitle}
         height="min-h-[420px] sm:min-h-[560px]"
-      >
-      <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:mt-[32px] sm:flex-row sm:gap-[16px]">
-        {(hero.ctaButtons && hero.ctaButtons.length > 0
-          ? hero.ctaButtons.slice(0, 2)
-          : [
-              { label: "Book Appointment", href: "/book", variant: "primary" as const },
-              { label: "Check Report", href: "/reports", variant: "secondary" as const },
-            ]
-        ).map((cta, i) => {
-          const external = /^https?:\/\//i.test(cta.href);
-          const className = `h-[48px] w-full min-w-[200px] rounded-[4px] px-[24px] py-[12px] font-heading text-base font-semibold shadow-md sm:w-auto ${
-            cta.variant === "secondary"
-              ? "bg-secondary text-secondary-foreground hover:bg-secondary/90"
-              : "bg-accent text-accent-foreground hover:bg-accent/90"
-          }`;
-          return (
-            <Button key={`${cta.href}-${i}`} asChild className={`w-full sm:w-auto ${className}`}>
-              {external ? (
-                <a href={cta.href} target="_blank" rel="noopener noreferrer">
-                  {cta.label}
-                </a>
-              ) : (
-                <Link to={cta.href}>{cta.label}</Link>
-              )}
-            </Button>
-          );
-        })}
-      </div>
-    </PageHeroSlider>
+      />
     </>
   );
 };

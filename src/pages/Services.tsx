@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, X as XIcon } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
@@ -13,14 +12,27 @@ import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
 import { RichText } from "@/components/content/RichText";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
 import { ServiceMark } from "@/components/service/ServiceMark";
 import {
   services as defaultServices,
   serviceFAQs,
+  serviceCategories as defaultServiceFilterTabs,
   type ServiceCard,
   type FAQItem,
 } from "@/data/mockData";
-import { api, defaultServicesPageConfig, IS_STRAPI_CONFIGURED, type PageHero, type ServiceComparisonRow } from "@/lib/api";
+import {
+  api,
+  createEmptyPageHero,
+  defaultServicesPageConfig,
+  formatPageTitle,
+  getEmptyServicesPageConfig,
+  IS_MOCK_DATA_ENABLED,
+  IS_STRAPI_CONFIGURED,
+  USE_LOCAL_MOCK_HYDRATION,
+  type PageHero,
+  type ServiceComparisonRow,
+} from "@/lib/api";
 
 const defaultServicesHero: PageHero = {
   page: "services",
@@ -31,35 +43,61 @@ const defaultServicesHero: PageHero = {
     { src: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=1600&h=900&fit=crop", alt: "Digital radiology" },
     { src: "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=1600&h=900&fit=crop", alt: "Laboratory testing" },
   ],
+  ctaButtons: [{ label: "Book Appointment", href: "/book", variant: "primary" }],
 };
 
 const Services = () => {
   const { pathname } = useLocation();
-  const [items, setItems] = useState<ServiceCard[] | null>(IS_STRAPI_CONFIGURED ? null : defaultServices);
-  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultServicesHero);
-  const [faqs, setFaqs] = useState<FAQItem[] | null>(IS_STRAPI_CONFIGURED ? null : serviceFAQs);
-  const [pageConfig, setPageConfig] = useState(IS_STRAPI_CONFIGURED ? null : defaultServicesPageConfig);
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "Site";
+  const [items, setItems] = useState<ServiceCard[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultServices : IS_STRAPI_CONFIGURED ? null : []
+  );
+  const [hero, setHero] = useState<PageHero | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultServicesHero : IS_STRAPI_CONFIGURED ? null : createEmptyPageHero("services")
+  );
+  const [faqs, setFaqs] = useState<FAQItem[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? serviceFAQs : IS_STRAPI_CONFIGURED ? null : []
+  );
+  const [pageConfig, setPageConfig] = useState(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultServicesPageConfig : IS_STRAPI_CONFIGURED ? null : getEmptyServicesPageConfig()
+  );
+  const [filterTabs, setFilterTabs] = useState<string[]>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultServiceFilterTabs : []
+  );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
   const [activeCategory, setActiveCategory] = useState("All");
 
-  const categories = pageConfig?.categories ?? defaultServicesPageConfig.categories;
-  const comparison: ServiceComparisonRow[] = pageConfig?.comparison ?? defaultServicesPageConfig.comparison;
+  const categories = filterTabs;
+  const comparison: ServiceComparisonRow[] =
+    pageConfig?.comparison ?? (IS_MOCK_DATA_ENABLED ? defaultServicesPageConfig.comparison : []);
 
   useEffect(() => {
     if (!IS_STRAPI_CONFIGURED) return;
     let cancelled = false;
     (async () => {
-      const [svc, h, f, cfg] = await Promise.all([
+      const [svc, h, f, cfg, strapiCats] = await Promise.all([
         api.services.getAll(),
         api.hero.getByPage("services", defaultServicesHero),
-        api.faqs.getAll(),
+        api.faqs.getByPage("services"),
         api.servicesPage.get(),
+        api.serviceCategories.getAll(),
       ]);
       if (!cancelled) {
         setItems(svc);
         setHero(h);
         setFaqs(f);
         setPageConfig(cfg);
+        const namesFromStrapi = strapiCats.map((c) => c.name);
+        const fromServices = [...new Set(svc.map((s) => s.category).filter(Boolean))].sort();
+        const nonAllDefaults = defaultServiceFilterTabs.filter((c) => c !== "All");
+        const ordered =
+          namesFromStrapi.length > 0
+            ? namesFromStrapi
+            : fromServices.length > 0
+              ? fromServices
+              : nonAllDefaults;
+        setFilterTabs(["All", ...ordered]);
         setReady(true);
       }
     })();
@@ -75,7 +113,7 @@ const Services = () => {
       <Layout>
         <SeoHelmet
           layers={hero?.seo ? [hero.seo] : []}
-          fallbackTitle="Our Services — Unicare Medical, Dhaka"
+          fallbackTitle={formatPageTitle("Our Services", siteName)}
           fallbackDescription={hero?.subtitle ?? defaultServicesHero.subtitle}
           pathForCanonical={pathname}
         />
@@ -103,19 +141,16 @@ const Services = () => {
     <Layout>
       <SeoHelmet
         layers={[hero.seo]}
-        fallbackTitle="Our Services — Unicare Medical, Dhaka"
+        fallbackTitle={formatPageTitle(hero.title || "Our Services", siteName)}
         fallbackDescription={hero.subtitle}
         pathForCanonical={pathname}
       />
-      <PageHeroSlider images={hero.slides} title={hero.title} subtitle={hero.subtitle}>
-        <div className="mt-[24px] flex flex-col items-center gap-[12px] sm:flex-row sm:justify-center">
-          <Link to="/book">
-            <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">
-              Book Appointment
-            </Button>
-          </Link>
-        </div>
-      </PageHeroSlider>
+      <PageHeroSlider
+        images={hero.slides}
+        fallbackCtaButtons={hero.ctaButtons}
+        title={hero.title}
+        subtitle={hero.subtitle}
+      />
 
       <PageBreadcrumb items={[{ label: "Services" }]} />
 

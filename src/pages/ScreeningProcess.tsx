@@ -13,7 +13,17 @@ import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
 import { RichText } from "@/components/content/RichText";
-import { api, defaultScreeningProcessPageConfig, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
+import {
+  api,
+  createEmptyPageHero,
+  defaultScreeningProcessPageConfig,
+  formatPageTitle,
+  getEmptyScreeningProcessPageConfig,
+  IS_STRAPI_CONFIGURED,
+  USE_LOCAL_MOCK_HYDRATION,
+  type PageHero,
+} from "@/lib/api";
 
 interface ProcessStep {
   icon: React.ElementType;
@@ -32,12 +42,26 @@ const defaultProcessHero: PageHero = {
   { src: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=1600&h=900&fit=crop", alt: "Patient consultation" },
   { src: "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=1600&h=900&fit=crop", alt: "Laboratory analysis" },
   ],
+  ctaButtons: [
+    { label: "Book Appointment", href: "/book", variant: "primary" },
+    { label: "Our Services", href: "/services", variant: "secondary" },
+  ],
 };
 
 const ScreeningProcess = () => {
   const { pathname } = useLocation();
-  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultProcessHero);
-  const [pageConfig, setPageConfig] = useState(IS_STRAPI_CONFIGURED ? null : defaultScreeningProcessPageConfig);
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "Site";
+  const [hero, setHero] = useState<PageHero | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultProcessHero : IS_STRAPI_CONFIGURED ? null : createEmptyPageHero("process")
+  );
+  const [pageConfig, setPageConfig] = useState(() =>
+    USE_LOCAL_MOCK_HYDRATION
+      ? defaultScreeningProcessPageConfig
+      : IS_STRAPI_CONFIGURED
+        ? null
+        : getEmptyScreeningProcessPageConfig()
+  );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
 
@@ -61,7 +85,14 @@ const ScreeningProcess = () => {
     setExpandedStep(expandedStep === index ? null : index);
   };
 
-  const processSteps: ProcessStep[] = (pageConfig?.steps ?? defaultScreeningProcessPageConfig.steps).map((step) => {
+  const rawSteps =
+    pageConfig != null
+      ? pageConfig.steps
+      : USE_LOCAL_MOCK_HYDRATION
+        ? defaultScreeningProcessPageConfig.steps
+        : [];
+
+  const processSteps: ProcessStep[] = rawSteps.map((step) => {
     const key = step.title.toLowerCase();
     let icon: React.ElementType = ClipboardList;
     if (key.includes("sample")) icon = TestTubes;
@@ -76,15 +107,23 @@ const ScreeningProcess = () => {
     <Layout>
       <SeoHelmet
         layers={hero?.seo ? [hero.seo, pageConfig?.seo] : pageConfig?.seo ? [pageConfig.seo] : []}
-        fallbackTitle={`${hero?.title ?? "Screening Process"} — Unicare Medical, Dhaka`}
-        fallbackDescription={hero?.subtitle ?? "Your step-by-step guide to the GCC medical screening journey at Unicare Medical."}
+        fallbackTitle={formatPageTitle(hero?.title?.trim() || "Screening Process", siteName)}
+        fallbackDescription={
+          hero?.subtitle ??
+          siteConfig.defaultSeo?.metaDescription ??
+          "Step-by-step guide to the medical screening process."
+        }
         pathForCanonical={pathname}
       />
-      {!ready ? <section className="relative min-h-[400px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading process page" /> : null}
+      {!ready ? (
+        <section className="relative min-h-[400px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading process page" />
+      ) : (
+        <>
       <PageHeroSlider
-        images={hero?.slides ?? defaultProcessHero.slides}
-        title={hero?.title ?? defaultProcessHero.title}
-        subtitle={hero?.subtitle ?? defaultProcessHero.subtitle}
+        images={hero?.slides ?? []}
+        fallbackCtaButtons={hero?.ctaButtons}
+        title={hero?.title ?? ""}
+        subtitle={hero?.subtitle}
       />
 
       <PageBreadcrumb items={[{ label: "Screening Process" }]} />
@@ -101,9 +140,14 @@ const ScreeningProcess = () => {
                 loading="lazy"
               />
               <div>
-                <h2 className="font-heading text-lg font-bold text-foreground">{pageConfig?.checklistTitle ?? defaultScreeningProcessPageConfig.checklistTitle}</h2>
+                <h2 className="font-heading text-lg font-bold text-foreground">
+                  {pageConfig?.checklistTitle ?? (USE_LOCAL_MOCK_HYDRATION ? defaultScreeningProcessPageConfig.checklistTitle : "")}
+                </h2>
                 <RichText
-                  value={pageConfig?.checklistDescription ?? defaultScreeningProcessPageConfig.checklistDescription}
+                  value={
+                    pageConfig?.checklistDescription ??
+                    (USE_LOCAL_MOCK_HYDRATION ? defaultScreeningProcessPageConfig.checklistDescription : "")
+                  }
                   className="mt-[4px] [&_p]:text-sm [&_p]:text-muted-foreground"
                 />
               </div>
@@ -118,7 +162,7 @@ const ScreeningProcess = () => {
           <div className="flex items-center justify-center gap-[8px] mb-[32px]">
             <Clock className="h-5 w-5 text-primary" />
             <span className="font-heading text-sm font-semibold text-foreground">
-              {pageConfig?.totalTimeLabel ?? defaultScreeningProcessPageConfig.totalTimeLabel}
+              {pageConfig?.totalTimeLabel ?? (USE_LOCAL_MOCK_HYDRATION ? defaultScreeningProcessPageConfig.totalTimeLabel : "")}
             </span>
           </div>
 
@@ -193,6 +237,8 @@ const ScreeningProcess = () => {
           </div>
         </div>
       </section>
+        </>
+      )}
     </Layout>
   );
 };

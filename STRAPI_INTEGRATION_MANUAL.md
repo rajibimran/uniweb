@@ -150,17 +150,20 @@ The production Strapi app for this frontend lives in **`backend/`** (not a separ
 
 ### 6.1 Set Environment Variable
 
-Create a `.env` file in the frontend project root:
+Create a `.env` file in the **frontend** project root (Vite). Strapi’s backend `.env` does **not** read `VITE_*` or `VITE_MOCK_DATA` — mock/demo toggles apply only to the React SPA build.
 
 ```env
 VITE_STRAPI_URL=http://localhost:1337
 VITE_STRAPI_API_KEY=your_strapi_api_token_here
+# Optional (default Yes): Yes/true/1 = allow bundled mock fallbacks; No/false/0 = Strapi-only (empty when CMS is blank or API fails).
+VITE_MOCK_DATA=Yes
 ```
 
 For production:
 ```env
 VITE_STRAPI_URL=https://your-strapi-domain.com
 VITE_STRAPI_API_KEY=your_production_readonly_token
+VITE_MOCK_DATA=No
 ```
 
 ### 6.2 That's It!
@@ -168,15 +171,17 @@ VITE_STRAPI_API_KEY=your_production_readonly_token
 The frontend automatically detects `VITE_STRAPI_URL` and (optionally) `VITE_STRAPI_API_KEY`.
 - All API calls go to Strapi first
 - If `VITE_STRAPI_API_KEY` is set, requests include `Authorization: Bearer <token>`
-- Falls back to mock data if Strapi returns an error
+- When `VITE_MOCK_DATA` is **Yes** (default), the app falls back to bundled mock data if Strapi is not configured, a request fails, or a collection is empty in Strapi
+- When `VITE_MOCK_DATA` is **No**, those cases yield empty sections and empty fields instead of mock content (so blank CMS entries are not replaced with demo copy)
 - No code changes needed
 
 ### 6.3 Verify Connection
 
-Open browser console. You should see API calls to your Strapi instance. If Strapi is down, you'll see:
+Open browser console. You should see API calls to your Strapi instance. If Strapi is down and mock mode is on, you may see:
 ```
 [api] Strapi unavailable, using mock data for services
 ```
+With `VITE_MOCK_DATA=No`, failed requests log a different message and return empty shapes instead of mock rows.
 
 Quick API-key verification (PowerShell):
 

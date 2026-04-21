@@ -3,6 +3,10 @@ import type { BlogArticle } from "@/lib/api";
 export const blogArticles: BlogArticle[] = [
   {
     slug: "gcc-medical-screening-guide",
+    isFeatured: true,
+    commentsOpen: true,
+    author: { name: "Unicare Editorial", slug: "unicare-editorial" },
+    readMinutes: 4,
     title: "Complete Guide to GCC Medical Screening",
     excerpt: "Everything you need to know about the medical screening process for overseas employment in GCC countries.",
     image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop",
@@ -13,6 +17,7 @@ export const blogArticles: BlogArticle[] = [
   },
   {
     slug: "preparing-for-medical-checkup",
+    commentsOpen: true,
     title: "How to Prepare for Your Medical Checkup",
     excerpt: "Tips and steps to follow before your medical examination to ensure accurate results and smooth processing.",
     image: "https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=600&h=400&fit=crop",

@@ -1,9 +1,13 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
+import { formatPageTitle } from "@/lib/api";
 
 const NotFound = () => {
   const location = useLocation();
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "Site";
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
@@ -14,7 +18,7 @@ const NotFound = () => {
       <SeoHelmet
         useSiteDefault={false}
         layers={[]}
-        fallbackTitle="404 — Page not found | Unicare Medical, Dhaka"
+        fallbackTitle={formatPageTitle("404 — Page not found", siteName)}
         fallbackDescription="The page you requested does not exist."
         pathForCanonical={location.pathname}
         forceNoIndex

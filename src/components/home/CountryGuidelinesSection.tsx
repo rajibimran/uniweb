@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { RichText } from "@/components/content/RichText";
-import { api, IS_STRAPI_CONFIGURED, type CountryGuideline } from "@/lib/api";
+import { api, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION, type CountryGuideline } from "@/lib/api";
 import {
   FileText,
   AlertCircle,
@@ -119,8 +119,8 @@ const LOCAL_GUIDELINES_FALLBACK: CountryGuideline[] = [
 ];
 
 const CountryGuidelinesSection = () => {
-  const [guidelines, setGuidelines] = useState<CountryGuideline[] | null>(
-    IS_STRAPI_CONFIGURED ? null : LOCAL_GUIDELINES_FALLBACK
+  const [guidelines, setGuidelines] = useState<CountryGuideline[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? LOCAL_GUIDELINES_FALLBACK : !IS_STRAPI_CONFIGURED ? [] : null
   );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
   const [activeCountry, setActiveCountry] = useState("ksa");
@@ -147,7 +147,7 @@ const CountryGuidelinesSection = () => {
     }
   }, [guidelines, activeCountry]);
 
-  if (!ready || !guidelines?.length) {
+  if (IS_STRAPI_CONFIGURED && !ready) {
     return (
       <section className="bg-muted/50 py-8 sm:py-[48px]" aria-busy="true" aria-label="Loading country guidelines">
         <div className="container px-4 sm:px-6">
@@ -163,6 +163,10 @@ const CountryGuidelinesSection = () => {
         </div>
       </section>
     );
+  }
+
+  if (!guidelines?.length) {
+    return null;
   }
 
   const country = guidelines.find((c) => c.id === activeCountry) ?? guidelines[0];

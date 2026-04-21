@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
 import { Play } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
 import { RichText } from "@/components/content/RichText";
-import { api, defaultAboutPage, type AboutPageContent, type PageHero } from "@/lib/api";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
+import {
+  api,
+  createEmptyPageHero,
+  defaultAboutPage,
+  formatPageTitle,
+  getEmptyAboutPageContent,
+  IS_MOCK_DATA_ENABLED,
+  type AboutPageContent,
+  type PageHero,
+} from "@/lib/api";
 
 const defaultAboutHero: PageHero = {
   page: "about",
@@ -17,6 +26,10 @@ const defaultAboutHero: PageHero = {
     { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&h=900&fit=crop", alt: "Medical facility reception" },
     { src: "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=1600&h=900&fit=crop", alt: "Laboratory diagnostics" },
     { src: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=1600&h=900&fit=crop", alt: "Patient examination room" },
+  ],
+  ctaButtons: [
+    { label: "Book Appointment", href: "/book", variant: "primary" },
+    { label: "Our Services", href: "/services", variant: "secondary" },
   ],
 };
 
@@ -53,6 +66,8 @@ function toYouTubeEmbedUrl(input?: string): string {
 
 const About = () => {
   const { pathname } = useLocation();
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "Site";
   const [content, setContent] = useState<AboutPageContent | null>(null);
   const [hero, setHero] = useState<PageHero | null>(null);
   const [ready, setReady] = useState(false);
@@ -71,8 +86,8 @@ const About = () => {
         }
       } catch {
         if (!cancelled) {
-          setContent(defaultAboutPage);
-          setHero(defaultAboutHero);
+          setContent(IS_MOCK_DATA_ENABLED ? defaultAboutPage : getEmptyAboutPageContent());
+          setHero(IS_MOCK_DATA_ENABLED ? defaultAboutHero : createEmptyPageHero("about"));
         }
       } finally {
         if (!cancelled) setReady(true);
@@ -91,7 +106,7 @@ const About = () => {
     <Layout>
       <SeoHelmet
         layers={ready && hero ? [hero.seo, content?.seo] : []}
-        fallbackTitle="About Us — Unicare Medical, Dhaka"
+        fallbackTitle={formatPageTitle("About Us", siteName)}
         fallbackDescription={aboutDesc}
         pathForCanonical={pathname}
       />
@@ -104,20 +119,12 @@ const About = () => {
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </section>
       ) : (
-        <PageHeroSlider images={hero.slides} title={hero.title} subtitle={hero.subtitle}>
-          <div className="mt-[24px] flex flex-col items-center gap-[12px] sm:flex-row sm:justify-center">
-            <Link to="/book">
-              <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">
-                Book Appointment
-              </Button>
-            </Link>
-            <Link to="/services">
-              <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-secondary px-[24px] py-[12px] font-heading text-base font-semibold text-secondary-foreground shadow-md hover:bg-secondary/90">
-                Our Services
-              </Button>
-            </Link>
-          </div>
-        </PageHeroSlider>
+        <PageHeroSlider
+          images={hero.slides}
+          fallbackCtaButtons={hero.ctaButtons}
+          title={hero.title}
+          subtitle={hero.subtitle}
+        />
       )}
 
       <PageBreadcrumb items={[{ label: "About Us" }]} />

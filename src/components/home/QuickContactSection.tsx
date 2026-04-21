@@ -5,21 +5,45 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
+import { api, defaultSiteConfig, IS_STRAPI_CONFIGURED } from "@/lib/api";
 
 const QuickContactSection = () => {
   const { siteConfig } = useStrapiLayout();
+  const sectionTitle = siteConfig.quickContactSectionTitle?.trim() || defaultSiteConfig.quickContactSectionTitle || "Get In Touch";
+  const sectionBody =
+    siteConfig.quickContactSectionBody?.trim() || defaultSiteConfig.quickContactSectionBody || "";
+  const formHeading = siteConfig.quickContactFormHeading?.trim() || defaultSiteConfig.quickContactFormHeading || "Send a Message";
+  const successHeading =
+    siteConfig.quickContactSuccessHeading?.trim() || defaultSiteConfig.quickContactSuccessHeading || "Message Sent!";
+  const successBody =
+    siteConfig.quickContactSuccessBody?.trim() || defaultSiteConfig.quickContactSuccessBody || "";
+  const iframeTitle =
+    siteConfig.quickContactIframeTitle?.trim() ||
+    defaultSiteConfig.quickContactIframeTitle ||
+    `${siteConfig.siteName || defaultSiteConfig.siteName} location`;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) return;
+    setSubmitError(null);
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1500));
+    const result = await api.contactSubmissions.submit({
+      formKey: "home_quick",
+      name: name.trim(),
+      email: email.trim(),
+      message: message.trim(),
+    });
     setIsSubmitting(false);
+    if (!result.ok) {
+      setSubmitError(result.error ?? "Could not send. Please try again or use the phone number above.");
+      return;
+    }
     setSubmitted(true);
   };
 
@@ -27,10 +51,15 @@ const QuickContactSection = () => {
     <section className="bg-muted py-8 sm:py-[48px]">
       <div className="container px-4 sm:px-6">
         <div className="text-center mb-6 sm:mb-[32px]">
-          <h2 className="font-heading text-xl font-bold text-foreground sm:text-2xl">Get In Touch</h2>
-          <p className="mt-1 font-body text-xs text-muted-foreground sm:mt-[8px] sm:text-sm">
-            Have questions? Reach out to us directly or send a quick message.
-          </p>
+          <h2 className="font-heading text-xl font-bold text-foreground sm:text-2xl">{sectionTitle}</h2>
+          {sectionBody ? (
+            <p className="mt-1 font-body text-xs text-muted-foreground sm:mt-[8px] sm:text-sm">{sectionBody}</p>
+          ) : null}
+          {!IS_STRAPI_CONFIGURED ? (
+            <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">
+              Connect the site to Strapi (VITE_STRAPI_URL) to enable this form.
+            </p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 sm:gap-[32px]">
@@ -83,7 +112,7 @@ const QuickContactSection = () => {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Unicare Medical location"
+                title={iframeTitle}
               />
             </div>
           </div>
@@ -96,13 +125,20 @@ const QuickContactSection = () => {
                   <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 sm:mb-[16px] sm:h-[64px] sm:w-[64px]">
                     <Send className="h-6 w-6 text-accent sm:h-[28px] sm:w-[28px]" />
                   </div>
-                  <h3 className="font-heading text-base font-bold text-foreground sm:text-lg">Message Sent!</h3>
-                  <p className="mt-1 font-body text-xs text-muted-foreground sm:mt-[8px] sm:text-sm">We'll get back to you within 24 hours.</p>
+                  <h3 className="font-heading text-base font-bold text-foreground sm:text-lg">{successHeading}</h3>
+                  {successBody ? (
+                    <p className="mt-1 font-body text-xs text-muted-foreground sm:mt-[8px] sm:text-sm">{successBody}</p>
+                  ) : null}
                 </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-[16px]">
-                <h3 className="font-heading text-base font-bold text-foreground sm:text-lg">Send a Message</h3>
+                <h3 className="font-heading text-base font-bold text-foreground sm:text-lg">{formHeading}</h3>
+                {submitError ? (
+                  <p className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-xs text-destructive sm:text-sm">
+                    {submitError}
+                  </p>
+                ) : null}
                 <div>
                   <Label htmlFor="qc-name" className="font-heading text-xs font-semibold text-foreground mb-1 block sm:text-sm sm:mb-[4px]">Name *</Label>
                   <Input id="qc-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className="h-10 font-body text-sm sm:h-[44px]" maxLength={100} required />

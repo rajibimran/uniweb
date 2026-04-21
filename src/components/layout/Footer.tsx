@@ -1,7 +1,72 @@
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CertificationBadgeMedia } from "@/components/cert/CertificationBadgeMedia";
+import { RichText } from "@/components/content/RichText";
 import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
-import { IS_STRAPI_CONFIGURED } from "@/lib/api";
+import { IS_STRAPI_CONFIGURED, type FooterColumnConfig } from "@/lib/api";
+
+function FooterDynamicColumn({
+  col,
+  googleMapsEmbed,
+  mapPlaceholderLabel,
+  iframeTitle,
+}: {
+  col: FooterColumnConfig;
+  googleMapsEmbed: string;
+  mapPlaceholderLabel: string;
+  iframeTitle: string;
+}) {
+  return (
+    <div>
+      <h3 className="font-heading text-base font-bold mb-3 sm:text-lg sm:mb-[16px]">{col.title}</h3>
+      {col.body ? (
+        <RichText value={col.body} className="font-body text-xs text-background/80 mb-3 sm:text-sm sm:mb-[16px] [&_p]:mb-2 last:[&_p]:mb-0" />
+      ) : null}
+      {col.links.length > 0 ? (
+        <ul className="flex flex-col gap-2 sm:gap-[8px]">
+          {col.links.map((link) => (
+            <li key={`${link.href}-${link.label}`}>
+              {link.href.startsWith("/") ? (
+                <Link
+                  to={link.href}
+                  className="font-body text-xs text-background/80 transition-colors hover:text-background sm:text-sm"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  href={link.href}
+                  className="font-body text-xs text-background/80 transition-colors hover:text-background sm:text-sm"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {link.label}
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {col.showMap ? (
+        googleMapsEmbed ? (
+          <iframe
+            title={iframeTitle}
+            src={googleMapsEmbed}
+            className="mt-3 aspect-video w-full rounded-lg border-0 sm:mt-[16px]"
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        ) : (
+          <div className="mt-3 flex aspect-video w-full items-center justify-center rounded-lg bg-background/10 text-xs text-background/50 sm:mt-[16px] sm:text-sm">
+            <MapPin className="mr-2 h-4 w-4 sm:mr-[8px] sm:h-5 sm:w-5" />
+            {mapPlaceholderLabel}
+          </div>
+        )
+      ) : null}
+    </div>
+  );
+}
 
 const Footer = () => {
   const { layoutReady, siteConfig, footerQuickLinks, footerServiceLinks, certifications } = useStrapiLayout();
@@ -10,6 +75,21 @@ const Footer = () => {
   const fb = siteConfig.socialLinks.facebook;
   const ig = siteConfig.socialLinks.instagram;
   const li = siteConfig.socialLinks.linkedin;
+  const footerCols = siteConfig.footerColumns && siteConfig.footerColumns.length > 0 ? siteConfig.footerColumns : null;
+  const mapIframeTitle = siteConfig.quickContactIframeTitle?.trim() || `${siteConfig.siteName || "Clinic"} location`;
+  const certTitle = siteConfig.footerCertStripTitle?.trim() || "Approved & Certified By";
+  const privacyLabel = siteConfig.footerPrivacyLinkLabel?.trim() || "Privacy Policy";
+  const mapPlaceholder = siteConfig.footerMapPlaceholderLabel?.trim() || "Map Placeholder";
+  const copyrightExtra = siteConfig.footerCopyrightExtra?.trim() || ", Dhaka. All rights reserved.";
+
+  const mainGridClass =
+    footerCols == null
+      ? "lg:grid-cols-4"
+      : footerCols.length <= 1
+        ? "lg:grid-cols-2"
+        : footerCols.length === 2
+          ? "lg:grid-cols-3"
+          : "lg:grid-cols-4";
 
   if (IS_STRAPI_CONFIGURED && !layoutReady) {
     return (
@@ -37,7 +117,7 @@ const Footer = () => {
   return (
     <footer className="bg-foreground text-background">
       <div className="container px-4 py-8 sm:px-6 sm:py-[48px]">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-[32px] lg:grid-cols-4">
+        <div className={`grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-[32px] ${mainGridClass}`}>
           <div>
             <div className="flex items-center gap-[8px] mb-4 sm:mb-[16px]">
               <img
@@ -47,8 +127,13 @@ const Footer = () => {
               />
             </div>
             <p className="font-body text-xs leading-relaxed text-background/80 mb-4 sm:text-sm sm:mb-[16px]">
-              {siteConfig.tagline}. GCC approved medical center providing comprehensive health screening and certification
-              services in Dhaka, Bangladesh.
+              {siteConfig.tagline}
+              {siteConfig.footerBrandExtra ? (
+                <>
+                  {siteConfig.tagline ? ". " : ""}
+                  {siteConfig.footerBrandExtra}
+                </>
+              ) : null}
             </p>
             <div className="flex flex-col gap-2 sm:gap-[8px]">
               <a
@@ -76,74 +161,96 @@ const Footer = () => {
             </div>
           </div>
 
-          <div>
-            <h3 className="font-heading text-base font-bold mb-3 sm:text-lg sm:mb-[16px]">Quick Navigation</h3>
-            <ul className="flex flex-col gap-2 sm:gap-[8px]">
-              {footerQuickLinks.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    to={link.href}
-                    className="font-body text-xs text-background/80 transition-colors hover:text-background sm:text-sm"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-heading text-base font-bold mb-3 sm:text-lg sm:mb-[16px]">Our Services</h3>
-            <ul className="flex flex-col gap-2 sm:gap-[8px]">
-              {footerServiceLinks.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    to={link.href}
-                    className="font-body text-xs text-background/80 transition-colors hover:text-background sm:text-sm"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-heading text-base font-bold mb-3 sm:text-lg sm:mb-[16px]">Help Desk</h3>
-            <p className="font-body text-xs text-background/80 mb-3 sm:text-sm sm:mb-[16px]">
-              Need assistance? Our help desk is available during working hours.
-            </p>
-            {siteConfig.googleMapsEmbed ? (
-              <iframe
-                title="Clinic location"
-                src={siteConfig.googleMapsEmbed}
-                className="aspect-video w-full rounded-lg border-0"
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
+          {footerCols ? (
+            footerCols.map((col) => (
+              <FooterDynamicColumn
+                key={col.title}
+                col={col}
+                googleMapsEmbed={siteConfig.googleMapsEmbed}
+                mapPlaceholderLabel={mapPlaceholder}
+                iframeTitle={mapIframeTitle}
               />
-            ) : (
-              <div className="aspect-video w-full rounded-lg bg-background/10 flex items-center justify-center text-xs text-background/50 sm:text-sm">
-                <MapPin className="mr-2 h-4 w-4 sm:mr-[8px] sm:h-5 sm:w-5" />
-                Map Placeholder
+            ))
+          ) : (
+            <>
+              <div>
+                <h3 className="font-heading text-base font-bold mb-3 sm:text-lg sm:mb-[16px]">
+                  {siteConfig.footerLegacyQuickTitle?.trim() || "Quick Navigation"}
+                </h3>
+                <ul className="flex flex-col gap-2 sm:gap-[8px]">
+                  {footerQuickLinks.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        to={link.href}
+                        className="font-body text-xs text-background/80 transition-colors hover:text-background sm:text-sm"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )}
-          </div>
+
+              <div>
+                <h3 className="font-heading text-base font-bold mb-3 sm:text-lg sm:mb-[16px]">
+                  {siteConfig.footerLegacyServicesTitle?.trim() || "Our Services"}
+                </h3>
+                <ul className="flex flex-col gap-2 sm:gap-[8px]">
+                  {footerServiceLinks.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        to={link.href}
+                        className="font-body text-xs text-background/80 transition-colors hover:text-background sm:text-sm"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-heading text-base font-bold mb-3 sm:text-lg sm:mb-[16px]">
+                  {siteConfig.footerLegacyHelpTitle?.trim() || "Help Desk"}
+                </h3>
+                <p className="font-body text-xs text-background/80 mb-3 sm:text-sm sm:mb-[16px]">
+                  {siteConfig.footerLegacyHelpBody?.trim() ||
+                    "Need assistance? Our help desk is available during working hours."}
+                </p>
+                {siteConfig.googleMapsEmbed ? (
+                  <iframe
+                    title={mapIframeTitle}
+                    src={siteConfig.googleMapsEmbed}
+                    className="aspect-video w-full rounded-lg border-0"
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                ) : (
+                  <div className="aspect-video w-full rounded-lg bg-background/10 flex items-center justify-center text-xs text-background/50 sm:text-sm">
+                    <MapPin className="mr-2 h-4 w-4 sm:mr-[8px] sm:h-5 sm:w-5" />
+                    {mapPlaceholder}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="mt-8 border-t border-background/20 pt-4 sm:mt-[48px] sm:pt-[24px]">
-          <p className="font-body text-[10px] text-background/60 text-center mb-3 sm:text-xs sm:mb-[16px]">Approved & Certified By</p>
+          <p className="font-body text-[10px] text-background/60 text-center mb-3 sm:text-xs sm:mb-[16px]">{certTitle}</p>
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-[24px]">
             {certifications.map((cert) => (
               <div
-                key={cert.name}
+                key={cert.id}
                 className="flex h-8 items-center justify-center rounded bg-background/10 px-3 font-heading text-[10px] font-semibold text-background/70 sm:h-[40px] sm:px-[16px] sm:text-xs"
               >
-                {cert.logoUrl ? (
-                  <img src={cert.logoUrl} alt={cert.name} className="max-h-6 max-w-[100px] object-contain opacity-90 sm:max-h-8 sm:max-w-[120px]" />
-                ) : (
-                  cert.name
-                )}
+                <CertificationBadgeMedia
+                  cert={cert}
+                  className="flex max-h-full min-h-0 max-w-full items-center justify-center text-inherit no-underline opacity-90 hover:opacity-100"
+                  classNameImg="max-h-6 max-w-[100px] object-contain sm:max-h-8 sm:max-w-[120px]"
+                  classNameText=""
+                />
               </div>
             ))}
           </div>
@@ -151,14 +258,12 @@ const Footer = () => {
 
         <div className="mt-4 border-t border-background/20 pt-4 flex flex-col items-center gap-3 sm:mt-[24px] sm:pt-[16px] sm:flex-row sm:justify-between sm:gap-[12px]">
           <p className="font-body text-[10px] text-background/50 text-center sm:text-xs">
-            © {new Date().getFullYear()} {siteConfig.siteName}, Dhaka. All rights reserved.
+            © {new Date().getFullYear()} {siteConfig.siteName}
+            {copyrightExtra}
           </p>
           <div className="flex items-center gap-4 sm:gap-[16px]">
-            <Link
-              to="/privacy"
-              className="font-body text-[10px] text-background/50 hover:text-background sm:text-xs"
-            >
-              Privacy Policy
+            <Link to="/privacy" className="font-body text-[10px] text-background/50 hover:text-background sm:text-xs">
+              {privacyLabel}
             </Link>
             <div className="flex items-center gap-3 sm:gap-[12px]">
               {fb ? (

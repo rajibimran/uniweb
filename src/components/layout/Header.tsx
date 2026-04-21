@@ -4,10 +4,12 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
+import { useStaffAuth } from "@/contexts/StaffAuthContext";
 import { IS_STRAPI_CONFIGURED } from "@/lib/api";
 
 const Header = () => {
   const { layoutReady, siteConfig, navItems } = useStrapiLayout();
+  const { isLabStaff } = useStaffAuth();
   const [open, setOpen] = useState(false);
 
   const items = navItems;
@@ -100,6 +102,14 @@ const Header = () => {
           >
             Reports
           </Link>
+          {isLabStaff && (
+            <Link
+              to="/staff/lab-reports"
+              className="font-body text-[13px] font-medium text-foreground transition-colors hover:text-primary whitespace-nowrap"
+            >
+              Lab upload
+            </Link>
+          )}
           <Link to="/book">
             <Button className="h-[44px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-sm font-semibold text-accent-foreground hover:bg-accent/90">
               Book Appointment
@@ -134,6 +144,15 @@ const Header = () => {
               >
                 Report Search
               </Link>
+              {isLabStaff && (
+                <Link
+                  to="/staff/lab-reports"
+                  onClick={() => setOpen(false)}
+                  className="font-body text-base font-medium text-foreground transition-colors hover:text-primary"
+                >
+                  Lab upload
+                </Link>
+              )}
               <Link to="/book" onClick={() => setOpen(false)}>
                 <Button className="w-full h-[44px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-sm font-semibold text-accent-foreground hover:bg-accent/90">
                   Book Appointment

@@ -8,13 +8,20 @@ import {
   type StatItem,
   type ServicePackage,
 } from "@/data/mockData";
-import { api, IS_STRAPI_CONFIGURED, type CertificationBadge } from "@/lib/api";
+import { CertificationBadgeMedia } from "@/components/cert/CertificationBadgeMedia";
+import { api, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION, type CertificationBadge } from "@/lib/api";
 import { Phone, CheckCircle } from "lucide-react";
 
 const TrustSection = () => {
-  const [stats, setStats] = useState<StatItem[] | null>(IS_STRAPI_CONFIGURED ? null : defaultStats);
-  const [packages, setPackages] = useState<ServicePackage[] | null>(IS_STRAPI_CONFIGURED ? null : defaultPackages);
-  const [certs, setCerts] = useState<CertificationBadge[] | null>(IS_STRAPI_CONFIGURED ? null : defaultCerts);
+  const [stats, setStats] = useState<StatItem[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultStats : IS_STRAPI_CONFIGURED ? null : []
+  );
+  const [packages, setPackages] = useState<ServicePackage[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultPackages : IS_STRAPI_CONFIGURED ? null : []
+  );
+  const [certs, setCerts] = useState<CertificationBadge[] | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultCerts : IS_STRAPI_CONFIGURED ? null : []
+  );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
 
   useEffect(() => {
@@ -142,14 +149,15 @@ const TrustSection = () => {
             <div className="flex animate-scroll gap-4 sm:gap-[32px]" style={{ width: "max-content" }}>
               {[...certs, ...certs].map((cert, i) => (
                 <div
-                  key={`${cert.name}-${i}`}
+                  key={`${cert.id}-${i}`}
                   className="flex h-10 items-center justify-center rounded-lg border border-border bg-card px-4 font-heading text-xs font-semibold text-muted-foreground whitespace-nowrap sm:h-[48px] sm:px-[24px] sm:text-sm"
                 >
-                  {cert.logoUrl ? (
-                    <img src={cert.logoUrl} alt={cert.name} className="max-h-8 max-w-[120px] object-contain sm:max-h-9" />
-                  ) : (
-                    cert.name
-                  )}
+                  <CertificationBadgeMedia
+                    cert={cert}
+                    className="flex max-h-full min-h-0 max-w-full items-center justify-center text-inherit no-underline hover:opacity-90"
+                    classNameImg="max-h-8 max-w-[120px] object-contain sm:max-h-9"
+                    classNameText=""
+                  />
                 </div>
               ))}
             </div>

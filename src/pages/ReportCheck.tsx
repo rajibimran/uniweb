@@ -11,7 +11,17 @@ import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
-import { api, defaultReportPageConfig, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
+import {
+  api,
+  createEmptyPageHero,
+  defaultReportPageConfig,
+  formatPageTitle,
+  getEmptyReportPageConfig,
+  IS_STRAPI_CONFIGURED,
+  USE_LOCAL_MOCK_HYDRATION,
+  type PageHero,
+} from "@/lib/api";
 
 const defaultReportHero: PageHero = {
   page: "reports",
@@ -20,6 +30,10 @@ const defaultReportHero: PageHero = {
   slides: [
   { src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1600&h=900&fit=crop", alt: "Medical report analysis" },
   { src: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=1600&h=900&fit=crop", alt: "Health records management" },
+  ],
+  ctaButtons: [
+    { label: "Book Appointment", href: "/book", variant: "primary" },
+    { label: "Contact", href: "/contact", variant: "secondary" },
   ],
 };
 
@@ -32,14 +46,22 @@ interface ReportResult {
 
 const ReportCheck = () => {
   const { pathname } = useLocation();
-  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultReportHero);
-  const [pageConfig, setPageConfig] = useState(IS_STRAPI_CONFIGURED ? null : defaultReportPageConfig);
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "Site";
+  const [hero, setHero] = useState<PageHero | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultReportHero : IS_STRAPI_CONFIGURED ? null : createEmptyPageHero("reports")
+  );
+  const [pageConfig, setPageConfig] = useState(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultReportPageConfig : IS_STRAPI_CONFIGURED ? null : getEmptyReportPageConfig()
+  );
   const [patientId, setPatientId] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [errors, setErrors] = useState<{ patientId?: string; phone?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState<ReportResult | null>(null);
   const [notFound, setNotFound] = useState(false);
+  /** Strapi: PDF was found and download triggered. */
+  const [portalDownloadStarted, setPortalDownloadStarted] = useState(false);
 
   useEffect(() => {
     if (!IS_STRAPI_CONFIGURED) return;
@@ -82,20 +104,41 @@ const ReportCheck = () => {
     e.preventDefault();
     setReport(null);
     setNotFound(false);
+    setPortalDownloadStarted(false);
 
     if (!validate()) return;
 
     setIsLoading(true);
     try {
+      if (IS_STRAPI_CONFIGURED) {
+        const res = await api.labReportFiles.download(patientId, phoneNumber);
+        if (!res.ok) {
+          // Same message for wrong credentials, missing file, or server errors (no leaking details).
+          setNotFound(true);
+          return;
+        }
+        const url = URL.createObjectURL(res.blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = res.filename || `report-${patientId.trim().replace(/\W/g, "_")}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setPortalDownloadStarted(true);
+        return;
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       if (patientId.trim().toLowerCase() === "notfound") {
         setNotFound(true);
       } else {
+        const demo = pageConfig ?? (USE_LOCAL_MOCK_HYDRATION ? defaultReportPageConfig : getEmptyReportPageConfig());
         setReport({
-          patientName: pageConfig?.samplePatientName ?? defaultReportPageConfig.samplePatientName,
-          reportDate: pageConfig?.sampleReportDate ?? defaultReportPageConfig.sampleReportDate,
-          status: pageConfig?.sampleStatus ?? defaultReportPageConfig.sampleStatus,
+          patientName: demo.samplePatientName,
+          reportDate: demo.sampleReportDate,
+          status: demo.sampleStatus,
           reportId: `RPT-${patientId.trim().toUpperCase()}-2026`,
         });
       }
@@ -106,18 +149,26 @@ const ReportCheck = () => {
     }
   };
 
+  const loading = IS_STRAPI_CONFIGURED && (hero === null || pageConfig === null);
+  const supportPhone = pageConfig?.supportPhone?.trim() ?? "";
+
   return (
     <Layout>
       <SeoHelmet
         layers={hero?.seo ? [hero.seo] : []}
-        fallbackTitle={`${hero?.title ?? "Check Report"} — Unicare Medical, Dhaka`}
+        fallbackTitle={formatPageTitle(hero?.title?.trim() || "Check Report", siteName)}
         fallbackDescription={hero?.subtitle ?? "Enter your Patient ID and registered phone number to access your medical report."}
         pathForCanonical={pathname}
       />
+      {loading ? (
+        <section className="relative min-h-[400px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading report page" />
+      ) : (
+        <>
       <PageHeroSlider
-        images={hero?.slides ?? defaultReportHero.slides}
-        title={hero?.title ?? defaultReportHero.title}
-        subtitle={hero?.subtitle ?? defaultReportHero.subtitle}
+        images={hero?.slides ?? []}
+        fallbackCtaButtons={hero?.ctaButtons}
+        title={hero?.title ?? ""}
+        subtitle={hero?.subtitle}
       />
 
       <PageBreadcrumb items={[{ label: "Report Search" }]} />
@@ -138,13 +189,18 @@ const ReportCheck = () => {
               <form onSubmit={handleSubmit} className="space-y-[16px]">
                 <div>
                   <Label htmlFor="patientId" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">
-                    Patient ID *
+                    Patient ID or Passport Number *
                   </Label>
                   <Input
                     id="patientId"
                     value={patientId}
-                    onChange={(e) => { setPatientId(e.target.value); setErrors((p) => ({ ...p, patientId: undefined })); setNotFound(false); }}
-                    placeholder="e.g., UC-2026-0001"
+                    onChange={(e) => {
+                      setPatientId(e.target.value);
+                      setErrors((p) => ({ ...p, patientId: undefined }));
+                      setNotFound(false);
+                      setPortalDownloadStarted(false);
+                    }}
+                    placeholder="e.g., BGD-AO-02001"
                     className={cn("h-[44px] font-body text-sm", errors.patientId && "border-destructive")}
                     maxLength={20}
                   />
@@ -158,7 +214,12 @@ const ReportCheck = () => {
                   <Input
                     id="reportPhone"
                     value={phoneNumber}
-                    onChange={(e) => { setPhoneNumber(formatPhone(e.target.value)); setErrors((p) => ({ ...p, phone: undefined })); setNotFound(false); }}
+                    onChange={(e) => {
+                      setPhoneNumber(formatPhone(e.target.value));
+                      setErrors((p) => ({ ...p, phone: undefined }));
+                      setNotFound(false);
+                      setPortalDownloadStarted(false);
+                    }}
                     placeholder="01XX-XXX-XXXX"
                     className={cn("h-[44px] font-body text-sm", errors.phone && "border-destructive")}
                   />
@@ -193,6 +254,23 @@ const ReportCheck = () => {
                 </div>
               )}
 
+              {portalDownloadStarted && (
+                <div className="mt-[24px] rounded-lg border border-accent/30 bg-accent/5 p-[24px]">
+                  <div className="flex items-center gap-[8px] mb-[12px]">
+                    <ShieldCheck className="h-5 w-5 text-accent" />
+                    <span className="font-heading text-sm font-semibold text-accent">Report found</span>
+                  </div>
+                  <p className="font-body text-sm text-foreground mb-[12px]">
+                    Your PDF download should start automatically. If it did not, check your browser&apos;s download bar
+                    or permissions.
+                  </p>
+                  <div className="flex items-center gap-[8px] font-body text-xs text-muted-foreground">
+                    <FileDown className="h-4 w-4 shrink-0" />
+                    <span>Use the same passport / patient ID and phone you entered if you need to download again.</span>
+                  </div>
+                </div>
+              )}
+
               {report && (
                 <div className="mt-[24px] rounded-lg border border-accent/30 bg-accent/5 p-[24px]">
                   <div className="flex items-center gap-[8px] mb-[16px]">
@@ -223,11 +301,19 @@ const ReportCheck = () => {
             </div>
 
             <p className="mt-[16px] text-center font-body text-xs text-muted-foreground">
-              If you experience issues, please call <span className="font-semibold">{pageConfig?.supportPhone ?? defaultReportPageConfig.supportPhone}</span> or visit our reception.
+              {supportPhone ? (
+                <>
+                  If you experience issues, please call <span className="font-semibold">{supportPhone}</span> or visit our reception.
+                </>
+              ) : (
+                <>If you experience issues, please visit our reception.</>
+              )}
             </p>
           </div>
         </div>
       </section>
+        </>
+      )}
     </Layout>
   );
 };

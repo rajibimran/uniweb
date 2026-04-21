@@ -18,7 +18,17 @@ import Layout from "@/components/layout/Layout";
 import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
-import { api, defaultBookingPageConfig, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
+import {
+  api,
+  createEmptyPageHero,
+  defaultBookingPageConfig,
+  formatPageTitle,
+  getEmptyBookingPageConfig,
+  IS_STRAPI_CONFIGURED,
+  USE_LOCAL_MOCK_HYDRATION,
+  type PageHero,
+} from "@/lib/api";
 
 const iconMap: Record<string, React.ElementType> = {
   Stethoscope, ScanLine, TestTubes, Syringe,
@@ -39,6 +49,10 @@ const defaultBookHero: PageHero = {
   { src: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1600&h=900&fit=crop", alt: "Booking an appointment" },
   { src: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&h=900&fit=crop", alt: "Medical center reception" },
   ],
+  ctaButtons: [
+    { label: "Our Services", href: "/services", variant: "secondary" },
+    { label: "Contact", href: "/contact", variant: "primary" },
+  ],
 };
 
 interface FormErrors {
@@ -47,11 +61,23 @@ interface FormErrors {
   email?: string;
 }
 
+function normalizeSlotLabel(s: string): string {
+  return s.trim().replace(/\s+/g, " ");
+}
+
 const BookAppointment = () => {
   const { pathname } = useLocation();
-  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultBookHero);
-  const [pageConfig, setPageConfig] = useState(IS_STRAPI_CONFIGURED ? null : defaultBookingPageConfig);
-  const [bookingServices, setBookingServices] = useState(defaultBookingServices);
+  const { siteConfig } = useStrapiLayout();
+  const siteName = siteConfig.siteName?.trim() || "Site";
+  const [hero, setHero] = useState<PageHero | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultBookHero : IS_STRAPI_CONFIGURED ? null : createEmptyPageHero("book")
+  );
+  const [pageConfig, setPageConfig] = useState(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultBookingPageConfig : IS_STRAPI_CONFIGURED ? null : getEmptyBookingPageConfig()
+  );
+  const [bookingServices, setBookingServices] = useState(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultBookingServices : IS_STRAPI_CONFIGURED ? [] : defaultBookingServices
+  );
   const [ready, setReady] = useState(!IS_STRAPI_CONFIGURED);
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState("");
@@ -63,6 +89,9 @@ const BookAppointment = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   useEffect(() => {
     if (!IS_STRAPI_CONFIGURED) return;
@@ -87,6 +116,40 @@ const BookAppointment = () => {
       cancelled = true;
     };
   }, []);
+
+  /** Load slots already taken for the selected day (server enforces the same rule). */
+  useEffect(() => {
+    if (!IS_STRAPI_CONFIGURED || !ready || !selectedDate) {
+      setBookedSlots([]);
+      return;
+    }
+    const dateKey = format(selectedDate, "yyyy-MM-dd");
+    let cancelled = false;
+    setAvailabilityLoading(true);
+    (async () => {
+      const taken = await api.bookingRequests.getBookedSlotsForDate(dateKey);
+      if (!cancelled) {
+        setBookedSlots(taken);
+        setSelectedTime((prev) => {
+          if (!prev) return prev;
+          const n = normalizeSlotLabel(prev);
+          return taken.some((t) => normalizeSlotLabel(t) === n) ? "" : prev;
+        });
+      }
+    })().finally(() => {
+      if (!cancelled) setAvailabilityLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [IS_STRAPI_CONFIGURED, ready, selectedDate]);
+
+  const bookingTimeSlots =
+    pageConfig != null
+      ? pageConfig.timeSlots
+      : USE_LOCAL_MOCK_HYDRATION
+        ? defaultBookingPageConfig.timeSlots
+        : [];
 
   const progressValue = step === 1 ? 33 : step === 2 ? 66 : 100;
 
@@ -132,16 +195,43 @@ const BookAppointment = () => {
       handleSubmit();
       return;
     }
+    setSubmitError(null);
     setStep((s) => s + 1);
   };
 
   const handleSubmit = async () => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (!IS_STRAPI_CONFIGURED) {
+        await new Promise((r) => setTimeout(r, 800));
+        setIsSuccess(true);
+        return;
+      }
+      if (!selectedDate || !selectedTime || !selectedService) {
+        setSubmitError("Please complete date, time, and service.");
+        return;
+      }
+      const dateKey = format(selectedDate, "yyyy-MM-dd");
+      const svc = bookingServices.find((s) => s.id === selectedService);
+      const result = await api.bookingRequests.submit({
+        patientName: name.trim(),
+        email: email.trim(),
+        phone: phone.replace(/\D/g, ""),
+        serviceId: selectedService,
+        serviceTitle: svc?.title,
+        appointmentDate: dateKey,
+        timeSlot: selectedTime,
+      });
+      if (!result.ok) {
+        setSubmitError(result.error ?? "Could not submit booking.");
+        if (result.conflict && selectedDate) {
+          const taken = await api.bookingRequests.getBookedSlotsForDate(dateKey);
+          setBookedSlots(taken);
+        }
+        return;
+      }
       setIsSuccess(true);
-    } catch {
-      // Handle error
     } finally {
       setIsSubmitting(false);
     }
@@ -152,7 +242,7 @@ const BookAppointment = () => {
       <Layout>
         <SeoHelmet
           layers={pageConfig?.seo ? [pageConfig.seo] : []}
-          fallbackTitle="Appointment confirmed — Unicare Medical, Dhaka"
+          fallbackTitle={formatPageTitle("Appointment confirmed", siteName)}
           fallbackDescription="Your booking was submitted successfully."
           pathForCanonical={pathname}
           forceNoIndex
@@ -163,8 +253,10 @@ const BookAppointment = () => {
               <div className="mx-auto flex h-[64px] w-[64px] items-center justify-center rounded-full bg-accent/10 mb-[24px]">
                 <CheckCircle className="h-[32px] w-[32px] text-accent" />
               </div>
-              <h2 className="font-heading text-2xl font-bold text-foreground">Appointment Confirmed!</h2>
-              <p className="mt-[8px] font-body text-sm text-muted-foreground">Your appointment has been booked successfully.</p>
+              <h2 className="font-heading text-2xl font-bold text-foreground">Request received</h2>
+              <p className="mt-[8px] font-body text-sm text-muted-foreground">
+                We saved your booking request. Staff will contact you to confirm. You can also track it in the clinic admin under <span className="font-medium">Appointment booking</span>.
+              </p>
               <div className="mt-[24px] rounded-lg bg-muted p-[16px] text-left space-y-[8px]">
                 <p className="font-body text-sm text-foreground">
                   <span className="font-semibold">Service:</span> {bookingServices.find((s) => s.id === selectedService)?.title}
@@ -197,19 +289,21 @@ const BookAppointment = () => {
 
   return (
     <Layout>
-      {!ready || !hero || !pageConfig ? (
-        <section className="relative min-h-[420px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading booking page" />
-      ) : null}
       <SeoHelmet
         layers={hero?.seo ? [hero.seo] : []}
-        fallbackTitle={`${hero?.title ?? "Book Appointment"} — Unicare Medical, Dhaka`}
+        fallbackTitle={formatPageTitle(hero?.title?.trim() || "Book Appointment", siteName)}
         fallbackDescription={hero?.subtitle ?? "Schedule your medical examination in three simple steps."}
         pathForCanonical={pathname}
       />
+      {!ready || !hero || !pageConfig ? (
+        <section className="relative min-h-[420px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading booking page" />
+      ) : (
+        <>
       <PageHeroSlider
-        images={hero?.slides ?? defaultBookHero.slides}
-        title={hero?.title ?? defaultBookHero.title}
-        subtitle={hero?.subtitle ?? defaultBookHero.subtitle}
+        images={hero.slides}
+        fallbackCtaButtons={hero.ctaButtons}
+        title={hero.title}
+        subtitle={hero.subtitle}
       />
 
       <PageBreadcrumb items={[{ label: "Book Appointment" }]} />
@@ -279,19 +373,40 @@ const BookAppointment = () => {
                   </div>
                   <div>
                     <Label className="font-heading text-sm font-semibold text-foreground mb-[8px] block">Available Time Slots</Label>
+                    {availabilityLoading ? (
+                      <p className="font-body text-xs text-muted-foreground">Checking availability…</p>
+                    ) : null}
+                    {!selectedDate ? (
+                      <p className="font-body text-xs text-muted-foreground">Select a date to see time slots.</p>
+                    ) : null}
                     <div className="grid grid-cols-3 gap-[8px] sm:grid-cols-5">
-                      {(pageConfig?.timeSlots ?? defaultBookingPageConfig.timeSlots).map((slot) => (
-                        <button
-                          key={slot}
-                          onClick={() => setSelectedTime(slot)}
-                          className={cn("h-[44px] rounded-[4px] border px-[8px] font-body text-xs font-medium transition-colors",
-                            selectedTime === slot ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:border-primary/40"
-                          )}
-                        >
-                          {slot}
-                        </button>
-                      ))}
+                      {bookingTimeSlots.map((slot) => {
+                        const n = normalizeSlotLabel(slot);
+                        const taken = bookedSlots.some((b) => normalizeSlotLabel(b) === n);
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            disabled={taken || availabilityLoading}
+                            title={taken ? "This time is already booked" : undefined}
+                            onClick={() => !taken && setSelectedTime(slot)}
+                            className={cn(
+                              "h-[44px] rounded-[4px] border px-[8px] font-body text-xs font-medium transition-colors",
+                              taken
+                                ? "cursor-not-allowed border-border bg-muted text-muted-foreground line-through opacity-70"
+                                : selectedTime === slot
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border bg-card text-foreground hover:border-primary/40"
+                            )}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
                     </div>
+                    {IS_STRAPI_CONFIGURED && selectedDate && bookedSlots.length > 0 ? (
+                      <p className="mt-2 font-body text-[11px] text-muted-foreground">Greyed-out times are no longer available.</p>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -300,6 +415,9 @@ const BookAppointment = () => {
             {step === 3 && (
               <div>
                 <h2 className="font-heading text-xl font-bold text-foreground mb-[24px]">Your Details</h2>
+                {submitError ? (
+                  <p className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 font-body text-sm text-destructive">{submitError}</p>
+                ) : null}
                 <div className="space-y-[16px]">
                   <div>
                     <Label htmlFor="name" className="font-heading text-sm font-semibold text-foreground mb-[4px] block">Full Name *</Label>
@@ -333,6 +451,8 @@ const BookAppointment = () => {
           </div>
         </div>
       </section>
+        </>
+      )}
     </Layout>
   );
 };

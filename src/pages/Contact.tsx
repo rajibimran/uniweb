@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Phone, Mail, MapPin, Clock, Send, Loader2 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,7 @@ import PageHeroSlider from "@/components/PageHeroSlider";
 import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 import { SeoHelmet } from "@/components/seo/SeoHelmet";
 import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
-import { api, IS_STRAPI_CONFIGURED, type PageHero } from "@/lib/api";
+import { api, createEmptyPageHero, formatPageTitle, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION, type PageHero } from "@/lib/api";
 
 const defaultContactHero: PageHero = {
   page: "contact",
@@ -28,12 +28,16 @@ const defaultContactHero: PageHero = {
     { src: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1600&h=900&fit=crop", alt: "Healthcare professionals" },
     { src: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=1600&h=900&fit=crop", alt: "Patient support" },
   ],
+  ctaButtons: [{ label: "Book Appointment", href: "/book", variant: "primary" }],
 };
 
 const Contact = () => {
   const { pathname } = useLocation();
   const { layoutReady, siteConfig } = useStrapiLayout();
-  const [hero, setHero] = useState<PageHero | null>(IS_STRAPI_CONFIGURED ? null : defaultContactHero);
+  const siteName = siteConfig.siteName?.trim() || "Site";
+  const [hero, setHero] = useState<PageHero | null>(() =>
+    USE_LOCAL_MOCK_HYDRATION ? defaultContactHero : IS_STRAPI_CONFIGURED ? null : createEmptyPageHero("contact")
+  );
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -43,6 +47,7 @@ const Contact = () => {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!IS_STRAPI_CONFIGURED) return;
@@ -73,9 +78,21 @@ const Contact = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) return;
+    setSubmitError(null);
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 2000));
+    const result = await api.contactSubmissions.submit({
+      formKey: "contact_page",
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim() || undefined,
+      serviceInterest: service ? service.trim() : undefined,
+      message: message.trim(),
+    });
     setIsSubmitting(false);
+    if (!result.ok) {
+      setSubmitError(result.error ?? "Could not send. Please try again or call us.");
+      return;
+    }
     setSubmitted(true);
   };
 
@@ -85,7 +102,7 @@ const Contact = () => {
       <Layout>
         <SeoHelmet
           layers={hero?.seo ? [hero.seo] : []}
-          fallbackTitle="Contact Us — Unicare Medical, Dhaka"
+          fallbackTitle={formatPageTitle("Contact Us", siteName)}
           fallbackDescription={hero?.subtitle ?? defaultContactHero.subtitle}
           pathForCanonical={pathname}
         />
@@ -113,19 +130,16 @@ const Contact = () => {
     <Layout>
       <SeoHelmet
         layers={[hero!.seo]}
-        fallbackTitle="Contact Us — Unicare Medical, Dhaka"
+        fallbackTitle={formatPageTitle(hero!.title || "Contact Us", siteName)}
         fallbackDescription={hero!.subtitle}
         pathForCanonical={pathname}
       />
-      <PageHeroSlider images={hero!.slides} title={hero!.title} subtitle={hero!.subtitle}>
-        <div className="mt-[24px] flex flex-col items-center gap-[12px] sm:flex-row sm:justify-center">
-          <Link to="/book">
-            <Button className="h-[48px] min-w-[200px] rounded-[4px] bg-accent px-[24px] py-[12px] font-heading text-base font-semibold text-accent-foreground shadow-md hover:bg-accent/90">
-              Book Appointment
-            </Button>
-          </Link>
-        </div>
-      </PageHeroSlider>
+      <PageHeroSlider
+        images={hero!.slides}
+        fallbackCtaButtons={hero!.ctaButtons}
+        title={hero!.title}
+        subtitle={hero!.subtitle}
+      />
 
       <PageBreadcrumb items={[{ label: "Contact Us" }]} />
 
@@ -201,6 +215,18 @@ const Contact = () => {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-[16px]">
                   <h2 className="font-heading text-xl font-bold text-foreground">Send Us a Message</h2>
+                  <p className="font-body text-xs text-muted-foreground sm:text-sm">
+                    Your message is stored in our system for staff to review. Notifications go to the inbox set under{" "}
+                    <span className="font-semibold text-foreground">Site config → Contact form — staff inbox</span> (or the main site email if that is empty).
+                    {siteConfig.contactFormSendConfirmation
+                      ? " If outbound mail is set up in Site config (SMTP section) or on the server, you will also receive a short confirmation at the address you enter below."
+                      : " Visitor confirmation emails are turned off in Site config."}
+                  </p>
+                  {submitError ? (
+                    <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 font-body text-sm text-destructive">
+                      {submitError}
+                    </p>
+                  ) : null}
                   <div>
                     <Label htmlFor="c-name" className="mb-[4px] block font-heading text-sm font-semibold text-foreground">
                       Full Name *
