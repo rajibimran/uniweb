@@ -68,7 +68,10 @@ const HeroSection = () => {
           layers={[]}
           fallbackTitle={siteName ? `${siteName} — ${homePart}` : formatPageTitle(homePart, siteName)}
           fallbackDescription={defaultHomeHero.subtitle}
+          fallbackOgImage={defaultHomeHero.slides[0]?.src}
+          fallbackOgImageAlt={defaultHomeHero.slides[0]?.alt}
           pathForCanonical="/"
+          autoJsonLd={{ kind: "home" }}
         />
         <section
           className="relative min-h-[420px] animate-pulse bg-muted sm:min-h-[560px]"
@@ -85,7 +88,11 @@ const HeroSection = () => {
         layers={[hero.seo]}
         fallbackTitle={siteName ? `${siteName} — ${hero.title}` : formatPageTitle(hero.title, siteName)}
         fallbackDescription={hero.subtitle}
+        fallbackTextForDescription={[hero.subtitle, siteConfig.tagline].filter(Boolean).join(" ").trim()}
+        fallbackOgImage={hero.slides[0]?.src}
+        fallbackOgImageAlt={hero.slides[0]?.alt}
         pathForCanonical="/"
+        autoJsonLd={{ kind: "home" }}
       />
       <PageHeroSlider
         images={hero.slides}

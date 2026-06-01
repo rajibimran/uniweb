@@ -67,7 +67,20 @@ const BlogPost = () => {
         layers={[post.seo]}
         fallbackTitle={formatPageTitle(post.title, siteName)}
         fallbackDescription={post.excerpt}
+        fallbackTextForDescription={post.content}
+        fallbackOgImage={post.image}
+        fallbackOgImageAlt={post.title}
         pathForCanonical={pathname}
+        ogType="article"
+        articlePublishedTime={post.date}
+        articleSection={post.category || undefined}
+        autoJsonLd={{
+          kind: "article",
+          articleType: "BlogPosting",
+          datePublished: post.date,
+          section: post.category || undefined,
+          authorName: post.author?.name,
+        }}
       />
       <PageBreadcrumb items={[{ label: "Blog", href: "/blog" }, { label: post.title }]} />
       <article className="py-[48px]">

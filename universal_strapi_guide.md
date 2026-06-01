@@ -4,7 +4,7 @@ Version: 1.2
 Scope: Marketing/corporate/service websites with reusable sections/pages across different frontend designs (Lovable, React, Next, Nuxt, Astro, custom).
 
 **Changelog 1.2 (uniweb reference backend)**  
-Neutral region strip: **`country-flag`** (collection) and **`region-highlights-section`** (single) replace legacy GCC-specific API IDs. Optional catalog-style types **`product`**, **`team-member`**, **`resource-item`**, **`location`** ship in `backend/` with draft/publish. See **§21–§24** for field lists, which REST path to call per UI section, and roadmap. **Editors:** use **`docs/FRONTEND_STRAPI_MAINTENANCE_MAP.md`** in the **uniweb** frontend repo for page/section → Strapi screen mapping.
+Neutral region strip: **`country-flag`** (collection) and **`region-highlights-section`** (single) replace legacy GCC-specific API IDs. Optional catalog-style types **`product`**, **`team-member`**, **`resource-item`**, **`location`** ship in `um_admin/` with draft/publish. See **§21–§24** for field lists, which REST path to call per UI section, and roadmap. **Editors:** use **`docs/FRONTEND_STRAPI_MAINTENANCE_MAP.md`** in **`um_web`** for page/section → Strapi screen mapping.
 ---
 1) Goal and philosophy
 Build a design-agnostic Strapi backend where:
@@ -345,7 +345,7 @@ Use these endpoint patterns for frontend consumers:
 `GET /api/privacy-page?populate=sections&populate[seo][populate]=openGraphImage`
 `GET /api/navigations?populate=*&sort=order:asc`
 `GET /api/heroes?filters[page][$eq]={page}&populate=*`  
-For **per-slide images, copy, and slide CTAs**, Strapi v5 often needs explicit nested populate on `slideItems.image` and `slideItems.ctaButtons` (see `frontend/src/lib/api.ts` `HERO_POPULATE` in the uniweb repo); `populate=*` alone may omit nested media.
+For **per-slide images, copy, and slide CTAs**, Strapi v5 often needs explicit nested populate on `slideItems.image` and `slideItems.ctaButtons` (see `um_web/src/lib/api.ts` `HERO_POPULATE` in the uniweb repo); `populate=*` alone may omit nested media.
 `GET /api/services?populate=*&sort=order:asc`
 `GET /api/services?filters[slug][$eq]={slug}&populate=*`
 `GET /api/news-posts?populate=*&sort=date:desc`
@@ -621,7 +621,7 @@ Authorization: Bearer <token>
 Keep admin credentials private, and never allow public mutation actions.
 
 ---
-## 21) Uniweb `backend/` — content types, REST paths, and fields
+## 21) Uniweb `um_admin/` — content types, REST paths, and fields
 
 **Convention:** Strapi REST uses **`pluralName`** in the path (`/api/{plural}`). Single types use the singular API id (e.g. `/api/site-config`). All listed types use **`draftAndPublish: true`** unless noted. **`seo.entry`** fields: `metaTitle`, `metaDescription`, `metaKeywords`, `canonicalPath`, `openGraphImage`, `openGraphImageAlt`, `twitterCard`, `structuredData` (long text, JSON-LD), `noIndex`, `snippetForAiOverview`.
 
@@ -656,7 +656,10 @@ Keep admin credentials private, and never allow public mutation actions.
 | `api::about-page.about-page` | `GET /api/about-page` | Single | Mission/center/values/gallery/YouTube + `seo` |
 | `api::services-page.services-page` | `GET /api/services-page` | Single | `comparisonRows` only (filter tabs come from **Service Category**) |
 | `api::booking-page.booking-page` | `GET /api/booking-page` | Single | `timeSlotLines` (**`service.simple-line`**) + `seo` |
+| `api::fitness-page.fitness-page` | `GET /api/fitness-page` | Single | `disclaimer` + `seo` for `/fitness` |
 | `api::report-page.report-page` | `GET /api/report-page` | Single | Sample report hints + `seo` |
+| `api::booking-request.booking-request` | `GET /api/booking-requests/availability`, `POST /api/booking-requests/submit` | Collection | Public book flow; not open `find` for anonymous listing |
+| `api::lab-report-file.lab-report-file` | `POST /api/lab-report-files/download`, `POST …/staff-login`, `POST …/upload` | Collection | Patient PDF portal + **`lab-staff`** JWT upload; files on disk under `private/lab-reports/` |
 | `api::screening-process-page.screening-process-page` | `GET /api/screening-process-page` | Single | Checklist + `steps` component + `seo` |
 | `api::privacy-page.privacy-page` | `GET /api/privacy-page` | Single | `title`, repeatable `privacy.section`, `seo` |
 | `api::product.product` | `GET /api/products` | Collection | Catalog / portfolio (optional site) |
@@ -664,9 +667,9 @@ Keep admin credentials private, and never allow public mutation actions.
 | `api::resource-item.resource-item` | `GET /api/resource-items` | Collection | Downloads / resource hub (optional site) |
 | `api::location.location` | `GET /api/locations` | Collection | Branches / offices (optional site) |
 
-### 21.2 Field lists (schemas in `backend/src/api/.../schema.json`)
+### 21.2 Field lists (schemas in `um_admin/src/api/.../schema.json`)
 
-**`site-config`:** `siteName`, `tagline`, `logo` (media), `phone`, `email`, `address`, `workingHours`, `googleMapsEmbed`, `facebookUrl`, `instagramUrl`, `linkedinUrl`, `showBlogSection`, `showNewsSection`, `commentsEnabled`, `contactFormToEmail` (optional; staff inbox for form notifications — defaults to `email`), `contactFormSendConfirmation`, **outbound mail (contact form):** `smtpHost`, `smtpPort`, `smtpSecure`, `smtpUsername`, `smtpPassword`, `emailFrom` (these are **stripped** from public `GET /api/site-config` but used server-side when sending mail), `defaultSeo` (component).
+**`site-config`:** `siteName`, `tagline`, `logo` (media), `phone`, `email`, `address`, `workingHours`, `googleMapsEmbed`, `facebookUrl`, `instagramUrl`, `linkedinUrl`, `showBlogSection`, `showNewsSection`, `commentsEnabled`, **contact form:** `contactFormToEmail`, `contactFormSendConfirmation`, **booking form:** `bookingFormToEmail`, `bookingFormSendConfirmation`, **outbound mail:** `smtpHost`, `smtpPort`, `smtpSecure`, `smtpUsername`, `smtpPassword`, `emailFrom` (all **stripped** from public `GET /api/site-config` except secrets are never exposed; server uses Site config first, then optional **`SMTP_*` / `EMAIL_FROM` env** when fields empty), **footer / home contact UI:** `footerBrandExtra`, repeatable **`footerColumns`** (`site.footer-column` with nested **`site.footer-link`**), `footerCertStripTitle`, `footerPrivacyLinkLabel`, `footerCopyrightExtra`, `footerMapPlaceholderLabel`, `footerLegacyQuickTitle`, `footerLegacyServicesTitle`, `footerLegacyHelpTitle`, `footerLegacyHelpBody`, `quickContactSectionTitle`, `quickContactSectionBody`, `quickContactFormHeading`, `quickContactSuccessHeading`, `quickContactSuccessBody`, `quickContactIframeTitle`, `defaultSeo` (component).
 
 **`contact-submission`:** `formKey` (`contact_page` \| `home_quick`), `name`, `email`, optional `phone`, optional `serviceInterest`, `message`, `isRead`. **`draftAndPublish`:** off. Created only via **`POST /api/contact-submissions/submit`** (not the generic REST create for anonymous users).
 
@@ -706,6 +709,8 @@ Keep admin credentials private, and never allow public mutation actions.
 
 **`fitness-criterion`:** `category`, `description`, `itemLines` (**`service.simple-line`**).
 
+**`fitness-page`:** `entryTitle` (admin label), `disclaimer`, `seo`.
+
 **`certification`:** `name` (optional), `logo` (optional media), `shortDescription` (optional text), `verificationUrl` (optional string URL — logo/name link in UI), `order`.
 
 **`gallery-image`:** `image`, `alt`, `order`.
@@ -718,7 +723,11 @@ Keep admin credentials private, and never allow public mutation actions.
 
 **`booking-page`:** `timeSlotLines` (**`service.simple-line`**: one line per slot label), `seo`.
 
+**`booking-request`:** `patientName`, `email`, `phone`, `serviceId`, `serviceTitle`, `appointmentDate`, `timeSlot`, `status`, `staffNotes`. Created via **`POST /api/booking-requests/submit`**; **`draftAndPublish`:** off.
+
 **`report-page`:** `samplePatientName`, `sampleReportDate`, `sampleStatus`, `supportPhone`, `seo`.
+
+**`lab-report-file`:** `passportNumber`, `phoneDigits`, `originalFileName`, `storedFileName` (private), `mimeType`, `fileSize`. PDF bytes under **`private/lab-reports/`** on server. Public **`POST /api/lab-report-files/download`**; staff **`POST …/staff-login`** + **`POST …/upload`** with JWT (**`lab-staff`** role).
 
 **`screening-process-page`:** `checklistTitle`, `checklistDescription`, `totalTimeLabel`, `steps` (**`screening.process-step`**: `title`, `description`, `estimatedTime`, `detailLines` as **`service.simple-line`**), `seo`.
 
@@ -733,14 +742,14 @@ Keep admin credentials private, and never allow public mutation actions.
 **`location`:** `name`, `slug`, `address`, `phone`, `email`, `googleMapsEmbed`, `workingHours`, `heroImage`, `order`, `seo`.
 
 ---
-## 22) Uniweb `frontend/src` — which `api.*` helper matches which UI
+## 22) Uniweb `um_web/src` — which `api.*` helper matches which UI
 
-Normalized fetch layer: **`frontend/src/lib/api.ts`**. Layout bootstrap: **`StrapiLayoutContext.tsx`** (`siteConfig`, `navigation`, footer links, certifications).
+Normalized fetch layer: **`um_web/src/lib/api.ts`**. Layout bootstrap: **`StrapiLayoutContext.tsx`** (`siteConfig`, `navigation`, footer links, certifications).
 
 | UI location | Source file(s) | Strapi / API |
 |-------------|----------------|--------------|
 | Header (logo, phone, nav) | `components/layout/Header.tsx` | `site-config`, `navigation` (via context) |
-| Footer | `components/layout/Footer.tsx` | `site-config`, `footer-quick-link`, `footer-service-link`, `certification` (via context) |
+| Footer | `components/layout/Footer.tsx` | `site-config` (`footerColumns` + legacy footer strings), `footer-quick-link`, `footer-service-link`, `certification` (via context) |
 | Home hero | `components/home/HeroSection.tsx` | `api.hero.getByPage("home", …)` → **`heroes`** |
 | Home services grid | `components/home/ServicesSection.tsx` | `api.services.getAll()` → **`services`** |
 | Home region banner + flags | `components/home/RegionHighlightsSection.tsx` | `api.regionHighlightsSection.get()` + `api.countryFlags.getAll()` |
@@ -753,11 +762,13 @@ Normalized fetch layer: **`frontend/src/lib/api.ts`**. Layout bootstrap: **`Stra
 | Blog list / post | `pages/Blog.tsx`, `BlogPost.tsx` | `articles` (+ `post-categories`, `authors`), `hero` page `blog`; `POST/GET /api/comments/*` when comments on |
 | News list / post | `pages/News.tsx`, `NewsPost.tsx` | `news-posts` (same relations), `hero` page `news` |
 | Nav + route gates | `StrapiLayoutContext.tsx`, `SectionRoute.tsx`, `App.tsx` | `site-config.showBlogSection` / `showNewsSection` |
-| Book appointment | `pages/BookAppointment.tsx` | `booking-page`, `services`, `hero` page `book` |
-| Report check | `pages/ReportCheck.tsx` | `report-page`, `hero` page `reports` |
+| Book appointment | `pages/BookAppointment.tsx` | `booking-page`, `services`, `hero` page `book`, `booking-requests` availability + submit |
+| Report check | `pages/ReportCheck.tsx` | `report-page`, `hero` page `reports`, `POST /api/lab-report-files/download` |
+| Staff login | `pages/StaffLogin.tsx` | `POST /api/lab-report-files/staff-login` |
+| Staff lab PDF upload | `pages/LabReportBulkUpload.tsx` | `POST /api/lab-report-files/upload` (Bearer JWT) |
 | Screening process | `pages/ScreeningProcess.tsx` | `screening-process-page`, `hero` page `process` |
 | Contact | `pages/Contact.tsx` | `services`, `hero` page `contact`, `POST /api/contact-submissions/submit` (`formKey`: `contact_page`) |
-| Fitness | `pages/FitnessPage.tsx` | `fitness-criteria`, `hero` page `fitness` |
+| Fitness | `pages/FitnessPage.tsx` | `fitness-page` (single), `fitness-criteria`, `hero` page `fitness` |
 | Equipment | `pages/EquipmentPage.tsx` | `equipment-items`, `hero` page `equipment` |
 | Privacy | `pages/Privacy.tsx` | `privacy-page` |
 | **Not wired in this SPA yet** | — | Use REST for **`products`**, **`team-members`**, **`resource-items`**, **`locations`** when you add pages/sections. |
@@ -777,13 +788,14 @@ For non-developers: **`docs/FRONTEND_STRAPI_MAINTENANCE_MAP.md`** in the **uniwe
 - **Service categories** use the **`service-category`** collection and a relation on **`service`** (filter tabs load from `/api/service-categories`).
 - **List-shaped CMS data** uses repeatable **`service.simple-line`** (or other typed components) instead of raw JSON in Strapi for packages, booking slots, fitness bullets, and process step details.
 - **Optional types** (`product`, `team-member`, `resource-item`, `location`) have no first-class sections in the sample `frontend` yet—only REST + permissions; add `api.ts` helpers when you standardize list/detail shapes.
+- **Docker / VPS:** persist **`public/uploads`** (bind mount or named volume) alongside the database; otherwise Media Library and `/uploads/...` break after container recreate. **`git pull` does not sync uploads.**
 - **Hero `page` is a free string**; typos hide content. Consider enum or guarded seed list.
 - **`masterstrapi/`** folder may still use older IDs (`gcc-country`); align or treat as legacy snapshot.
 - **Breaking renames** (`gcc-*` → neutral) require new DB or migration for existing deployments.
 
 **Recommended next steps**
 
-1. Add **typed API helpers** in `frontend/src/lib/api.ts` for `products`, `team-members`, `resource-items`, `locations` (list + by slug) with shared `populate` constants.
+1. Add **typed API helpers** in `um_web/src/lib/api.ts` for `products`, `team-members`, `resource-items`, `locations` (list + by slug) with shared `populate` constants.
 2. Replace remaining **domain-specific** copy in seeds with neutral placeholders per vertical.
 3. Publish **`FRONTEND_STRAPI_MAINTENANCE_MAP.md`** to your internal wiki and link from Strapi Admin custom dashboard (optional).
 4. Add **OpenAPI or static JSON contract** export from Strapi (plugin or generated) for Lovable/Cursor consumers.

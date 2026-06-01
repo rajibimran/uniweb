@@ -2,10 +2,19 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { RichText } from "@/components/content/RichText";
 import { ServiceMark } from "@/components/service/ServiceMark";
-import { api, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION } from "@/lib/api";
+import { api, defaultSiteConfig, IS_STRAPI_CONFIGURED, USE_LOCAL_MOCK_HYDRATION } from "@/lib/api";
 import { services as defaultServices, type ServiceCard } from "@/data/mockData";
+import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
 
 const ServicesSection = () => {
+  const { siteConfig } = useStrapiLayout();
+  const sectionEyebrow =
+    siteConfig.homeServicesEyebrow?.trim() || defaultSiteConfig.homeServicesEyebrow || "";
+  const sectionHeading =
+    siteConfig.homeServicesHeading?.trim() || defaultSiteConfig.homeServicesHeading || "";
+  const sectionSubheading =
+    siteConfig.homeServicesSubheading?.trim() || defaultSiteConfig.homeServicesSubheading || "";
+
   const [items, setItems] = useState<ServiceCard[] | null>(() =>
     USE_LOCAL_MOCK_HYDRATION ? defaultServices : IS_STRAPI_CONFIGURED ? null : []
   );
@@ -52,10 +61,23 @@ const ServicesSection = () => {
     <section className="py-10 sm:py-[64px]">
       <div className="container px-4 sm:px-6">
         <div className="text-center mb-8 sm:mb-[48px]">
-          <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">Our Services</h2>
-          <p className="mt-2 font-body text-sm text-muted-foreground max-w-xl mx-auto sm:text-base sm:mt-[8px]">
-            Comprehensive GCC-approved medical screening services for overseas employment certification.
-          </p>
+          {sectionEyebrow ? (
+            <p className="font-body text-[10px] font-semibold uppercase tracking-[0.22em] text-secondary sm:text-xs">
+              {sectionEyebrow}
+            </p>
+          ) : null}
+          {sectionHeading ? (
+            <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl mt-1">
+              {sectionHeading}
+            </h2>
+          ) : (
+            <h2 className="sr-only">Services</h2>
+          )}
+          {sectionSubheading ? (
+            <p className="mt-2 font-body text-sm text-muted-foreground max-w-xl mx-auto sm:text-base sm:mt-[8px]">
+              {sectionSubheading}
+            </p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-[32px] lg:grid-cols-4">

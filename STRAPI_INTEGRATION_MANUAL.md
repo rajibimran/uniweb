@@ -109,10 +109,23 @@ Create each of these in **Strapi Admin → Content-Type Builder**. The frontend 
 | 17 | Gallery Image | `gallery-image` | Collection | `api.gallery.getAll()` |
 | 18 | Hero Section | `hero` | Collection | `api.hero.getByPage()` |
 | 19 | About Page | `about-page` | Single Type | `api.about.get()` |
+| 20 | Fitness Page | `fitness-page` | Single Type | `api.fitnessPage.get()` |
+| 21 | Report Page | `report-page` | Single Type | `api.reportPage.get()` |
+| 22 | Services Page | `services-page` | Single Type | `api.servicesPage.get()` |
+| 23 | Booking Page | `booking-page` | Single Type | `api.bookingPage.get()` |
+| 24 | Screening Process Page | `screening-process-page` | Single Type | *(hero + page single)* |
+| 25 | Privacy Page | `privacy-page` | Single Type | `api.privacyPage.get()` |
+| 26 | Appointment booking | `booking-request` | Collection | `api.bookingRequests.*` — submit + availability |
+| 27 | Lab report PDF | `lab-report-file` | Collection | Patient/staff flows via `/api/lab-report-files/*` |
+| 28 | Post Category | `post-category` | Collection | Blog/news taxonomy |
+| 29 | Author | `author` | Collection | Optional byline |
+| 30 | Service Category | `service-category` | Collection | Service listing tabs |
+| 31 | Comment | `comment` | Collection | `/api/comments/*` |
+| 32 | Contact submission | `contact-submission` | Collection | `/api/contact-submissions/submit` |
 
 ### 4.1 This monorepo (`uniweb`)
 
-The production Strapi app for this frontend lives in **`backend/`** (not a separate repo). You do **not** need to recreate types by hand unless you are starting from scratch elsewhere:
+The Strapi app for this frontend lives in **`backend/`** inside the **uniweb** monorepo and is also published as **[uniadmin](https://github.com/rajibimran/uniadmin)** for deployment. You do **not** need to recreate types by hand unless you are starting from scratch elsewhere:
 
 - **Content-types:** `backend/src/api/<api-name>/content-types/<singular-name>/schema.json`
 - **Components:** `backend/src/components/<category>/*.json`
@@ -136,13 +149,17 @@ The production Strapi app for this frontend lives in **`backend/`** (not a separ
 | **Certifications** | Certification names + optional logo images (Media) | Certification |
 | **News & Blog** | All posts, categories, dates, images, content | News Post / Article |
 | **Equipment** | Equipment names, models, quantities, images | Equipment Item |
-| **Fitness Criteria** | Category names, descriptions, item lists | Fitness Criteria |
+| **Fitness Criteria** | Category names, descriptions, item lists | Fitness Criterion collection |
+| **Fitness page copy** | Disclaimer / notes below the criteria list + SEO | **Single:** Fitness Page |
 | **FAQs** | Questions and answers | FAQ |
-| **Footer** | Quick links, service links, contact info | Footer Links + Site Config |
+| **Footer** | Dynamic columns (`footerColumns` + link components), legacy quick/service columns, cert strip title, privacy label, copyright extras, help blurb | **Site Config** + **Footer Quick/Service Link** collections + **Certification** |
+| **Booking** | Slot availability + confirmation email toggles | **Booking Page** single + **Site Config** (`bookingFormToEmail`, `bookingFormSendConfirmation`) + **Appointment booking** collection |
+| **Report portal** | Sample copy + support phone; real PDFs | **Report Page** single + **Lab report PDF** collection (disk-backed) |
+| **Staff uploads** | Lab PDF bulk upload (passport + phone) | Strapi **Users & Permissions** role **`lab-staff`** + `/api/lab-report-files/*` (see maintenance map) |
 | **About Page** | Mission text, center description, values, gallery | About Page |
 | **Contact Info** | Phone, email, address, working hours, map URL | Site Config |
 | **Social Links** | Facebook, Instagram, LinkedIn URLs | Site Config |
-| **SEO / JSON-LD / social previews** | Global defaults + per-page meta, OG image (Media), canonical, robots, schema.org JSON | Site Config `defaultSeo` + `seo.entry` on Hero, Service, Article, News Post, About Page |
+| **SEO / JSON-LD / social previews** | Global defaults + per-page meta, OG image (Media), canonical, robots, schema.org JSON | Site Config `defaultSeo` + `seo.entry` on Hero, Service, Article, News Post, About Page, Fitness Page, Report Page, etc. |
 
 ---
 
@@ -157,6 +174,8 @@ VITE_STRAPI_URL=http://localhost:1337
 VITE_STRAPI_API_KEY=your_strapi_api_token_here
 # Optional (default Yes): Yes/true/1 = allow bundled mock fallbacks; No/false/0 = Strapi-only (empty when CMS is blank or API fails).
 VITE_MOCK_DATA=Yes
+
+# Lab staff upload (/staff/lab-reports): no extra VITE_* keys — staff sign in against Strapi (role lab-staff).
 ```
 
 For production:
@@ -309,6 +328,12 @@ const imageUrl = image.startsWith('http')
 
 This project’s `src/lib/api.ts` already resolves media URLs from the API; the bottleneck is usually **upload size**, not URL wiring.
 
+### Media persistence (production / Docker)
+
+Strapi stores uploads under **`public/uploads/`** on the server. That directory is **gitignored** — **`git pull` does not deploy media**. The **database** (e.g. `./data` in Docker) and **`public/uploads`** must stay in sync; restoring a DB without the matching files produces **404 / broken thumbnails** in Media Library.
+
+**Docker:** Mount a volume or bind-mount **`./public/uploads`** into the container at the app’s `public/uploads` (same path as `WORKDIR` in your `Dockerfile`, often `/opt/app/public/uploads`). Otherwise, **container recreate** after `docker compose build` drops files that are not on a volume.
+
 ### Media fields (no URL text — use Media Library)
 
 Editors should **upload** assets in Strapi; do **not** paste external image URLs into text fields for these. The Admin shows suggested sizes in the field label (from `schema.json` → `config.metadatas`).
@@ -378,6 +403,20 @@ Strapi Admin → **Settings → Users & Permissions → Roles → Public** — c
 
 **Important:** Never enable `create`, `update`, or `delete` for the Public role.
 
+### 9.3 Lab reports & booking (custom routes)
+
+Public SPA flows use dedicated routes (not generic collection `create` for anonymous users where restricted):
+
+| Flow | Method | Path | Notes |
+|------|--------|------|--------|
+| Report check — download PDF | `POST` | `/api/lab-report-files/download` | Body: patient id + phone; returns PDF when a **Lab report PDF** row matches |
+| Staff login | `POST` | `/api/lab-report-files/staff-login` | Application user with **`lab-staff`** role |
+| Staff upload | `POST` | `/api/lab-report-files/upload` | `Authorization: Bearer <jwt>`; multipart PDF |
+| Booking — slots taken | `GET` | `/api/booking-requests/availability?date=YYYY-MM-DD` | Used by Book Appointment page |
+| Booking — submit | `POST` | `/api/booking-requests/submit` | Creates **Appointment booking** row |
+
+Exact permissions are granted in **`backend/src/bootstrap/public-permissions.ts`** and route configs under **`backend/src/api/*/routes/`**.
+
 ---
 
 ## 10. Deployment Guide
@@ -420,17 +459,24 @@ This repo uses **`backend/config/middlewares.ts`** (TypeScript). By default it a
   `FRONTEND_URLS=http://localhost:5173,https://myapp.com`
 
 ```typescript
-// backend/config/middlewares.ts (conceptually)
+// backend/config/middlewares.ts (conceptually; Strapi 5 — no `enabled` key on cors)
 {
   name: 'strapi::cors',
   config: {
-    enabled: true,
-    origin: ['http://localhost:8080', 'http://127.0.0.1:8080', ...extraOriginsFromEnv],
+    origin: ['http://localhost:8080', 'http://localhost:5173', ...extraOriginsFromEnv],
   },
 },
 ```
 
 After changing origins, restart Strapi.
+
+### 10.4 Docker: persist uploads and align data
+
+If you use **Docker Compose**:
+
+- Mount **`./data`** (or your DB files) so Strapi data survives container recreation.
+- **Also** mount **`./public/uploads` → `{WORKDIR}/public/uploads`** (e.g. `/opt/app/public/uploads`) so **Media Library files** are not lost on `docker compose build` / new containers.
+- Optional mail fallback: **`SMTP_*`** and **`EMAIL_FROM`** in **backend** `.env` when Site config SMTP fields are empty (see **`backend/.env.example`**).
 
 ---
 
@@ -451,6 +497,15 @@ After changing origins, restart Strapi.
 | facebookUrl | Short Text | Social media URL |
 | instagramUrl | Short Text | Social media URL |
 | linkedinUrl | Short Text | Social media URL |
+| showBlogSection / showNewsSection / commentsEnabled | Boolean | Toggles blog/news routes and comment blocks |
+| contactFormToEmail, contactFormSendConfirmation | Email / Boolean | Contact form staff inbox + visitor confirmation |
+| bookingFormToEmail, bookingFormSendConfirmation | Email / Boolean | Booking form staff inbox + visitor confirmation |
+| smtpHost, smtpPort, smtpSecure, smtpUsername, smtpPassword, emailFrom | Various | Outbound mail (stripped from public API response); optional **env** fallback |
+| footerBrandExtra | Long Text | Extra blurb under logo in footer |
+| footerColumns | Repeatable **`site.footer-column`** | Dynamic footer columns (title + **`site.footer-link`** rows) |
+| footerCertStripTitle, footerPrivacyLinkLabel, footerCopyrightExtra, footerMapPlaceholderLabel | Short Text | Footer chrome strings |
+| footerLegacyQuickTitle, footerLegacyServicesTitle, footerLegacyHelpTitle, footerLegacyHelpBody | Short / Text | Legacy 3-column footer when `footerColumns` is empty |
+| quickContactSectionTitle, quickContactSectionBody, quickContactFormHeading, quickContactSuccessHeading, quickContactSuccessBody, quickContactIframeTitle | Short / Text | Home “Get in touch” block copy |
 | defaultSeo | Component (single) `seo.entry`, optional | Global SEO defaults merged before page-specific `seo` (see §15) |
 
 ### 11.2 Navigation Item
@@ -542,7 +597,15 @@ In Admin, the SEO block is labeled **“SEO — search, social & schema”**.
 |---|---|---|
 | category | Short Text | e.g., "Infectious Diseases — Must Be Negative" |
 | description | Long Text | Category description |
-| items | JSON | Array of criteria strings |
+| itemLines | Repeatable **`service.simple-line`** | One component entry per bullet (`text` field) |
+
+### 11.8b Fitness Page (Single Type)
+
+| Field | Type | Notes |
+|---|---|---|
+| entryTitle | Short Text | Label in Strapi admin only |
+| disclaimer | Long Text | Shown under the criteria list on `/fitness` |
+| seo | Component (single) `seo.entry`, optional | Page SEO |
 
 ### 11.9 Stat
 
@@ -577,6 +640,7 @@ In Admin, the SEO block is labeled **“SEO — search, social & schema”**.
 | question | Short Text | The question |
 | answer | Long Text | The answer |
 | order | Number | Display order |
+| sitePage | Relation → **Hero** | Which page this FAQ belongs to (filter in API by hero `page`, e.g. `services`) |
 
 ### 11.13 Hero Section
 
@@ -625,9 +689,17 @@ In Admin, the SEO block is labeled **“SEO — search, social & schema”**.
 
 *Legacy `srcUrl` was removed — use Media only.*
 
+### Report Page, appointment bookings, and lab PDFs
+
+**Report Page (single):** `samplePatientName`, `sampleReportDate`, `sampleStatus` (demo copy), `supportPhone`, optional `seo` — used by **`/reports`** together with Hero `page=reports`.
+
+**Appointment booking (collection):** created only via **`POST /api/booking-requests/submit`** — `patientName`, `email`, `phone`, `serviceId`, optional `serviceTitle`, `appointmentDate`, `timeSlot`, `status` (pending / confirmed / cancelled / rescheduled), optional `staffNotes`. Slot collisions use **`GET /api/booking-requests/availability?date=YYYY-MM-DD`**.
+
+**Lab report PDF (collection):** metadata for the patient portal; PDF bytes live under **`private/lab-reports/`** on the server (not Strapi Media Library). **`POST /api/lab-report-files/download`** (public) returns a file when **passportNumber** + **phone** match a row. Staff bulk upload: **`lab-staff`** Users & Permissions role → **`POST /api/lab-report-files/staff-login`** then **`POST /api/lab-report-files/upload`** with JWT.
+
 ### 11.17 Component `seo.entry` (shared)
 
-Single-use SEO block used on **Site Config** (`defaultSeo`), **Hero**, **Service**, **Article**, **News Post**, and **About Page**.
+Single-use SEO block used on **Site Config** (`defaultSeo`), **Hero**, **Service**, **Article**, **News Post**, **About Page**, **Fitness Page**, **Report Page**, and other singles that expose `seo`.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -653,6 +725,7 @@ When a content type’s `seo` (or `defaultSeo`) is **left empty**, the frontend 
 | Problem | Solution |
 |---|---|
 | CORS errors | Add frontend URL to Strapi's CORS config (Section 10.3) |
+| Media Library previews broken / `/uploads/...` 404 | **Files missing** under `public/uploads` (DB–disk mismatch) or Docker **without** a `public/uploads` volume — restore files + persist volume (§8, §10.4) |
 | Images not loading | Prepend `STRAPI_BASE_URL` to relative image paths |
 | Data structure mismatch | Add transform function (Section 7) to map Strapi attributes |
 | 403 Forbidden | Confirm bootstrap ran (Section 9) or enable `find`/`findOne` manually for Public |
@@ -686,6 +759,7 @@ This project targets **Strapi v5** (`backend` package). Responses are often **fl
 - [ ] Optional: run phased seeding (Section 13) or add content via Admin
 - [ ] Set `VITE_STRAPI_URL` in the frontend `.env`
 - [ ] Set `FRONTEND_URLS` (and/or adjust `middlewares.ts`) so CORS matches your dev port (Section 10.3)
+- [ ] Docker/production: persist **`public/uploads`** (and database) — Section 10.4
 - [ ] Optional: fill **Site Config → defaultSeo** and per-page **`seo.entry`** in Strapi for production SEO (Section 15)
 - [ ] Test APIs, e.g. `http://localhost:1337/api/services?populate=*`
 - [ ] Deploy Strapi and update `VITE_STRAPI_URL` for production

@@ -73,7 +73,10 @@ const News = () => {
           layers={hero?.seo ? [hero.seo] : []}
           fallbackTitle={formatPageTitle("News & Updates", siteName)}
           fallbackDescription={hero?.subtitle ?? defaultNewsHero.subtitle}
+          fallbackOgImage={hero?.slides?.[0]?.src}
+          fallbackOgImageAlt={hero?.slides?.[0]?.alt}
           pathForCanonical={pathname}
+          autoJsonLd={{ kind: "webpage", pageName: "News & Updates" }}
         />
         <section className="relative min-h-[400px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading news" />
         <PageBreadcrumb items={[{ label: "News & Updates" }]} />
@@ -98,7 +101,10 @@ const News = () => {
         layers={[hero.seo]}
         fallbackTitle={formatPageTitle(hero.title || "News & Updates", siteName)}
         fallbackDescription={hero.subtitle}
+        fallbackOgImage={hero.slides?.[0]?.src}
+        fallbackOgImageAlt={hero.slides?.[0]?.alt}
         pathForCanonical={pathname}
+        autoJsonLd={{ kind: "webpage", pageName: hero.title || "News & Updates" }}
       />
       <PageHeroSlider
         images={hero.slides}

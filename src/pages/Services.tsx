@@ -115,7 +115,10 @@ const Services = () => {
           layers={hero?.seo ? [hero.seo] : []}
           fallbackTitle={formatPageTitle("Our Services", siteName)}
           fallbackDescription={hero?.subtitle ?? defaultServicesHero.subtitle}
+          fallbackOgImage={hero?.slides?.[0]?.src}
+          fallbackOgImageAlt={hero?.slides?.[0]?.alt}
           pathForCanonical={pathname}
+          autoJsonLd={{ kind: "webpage", pageName: "Our Services" }}
         />
         <section
           className="relative flex min-h-[400px] items-center justify-center bg-muted"
@@ -143,7 +146,10 @@ const Services = () => {
         layers={[hero.seo]}
         fallbackTitle={formatPageTitle(hero.title || "Our Services", siteName)}
         fallbackDescription={hero.subtitle}
+        fallbackOgImage={hero.slides?.[0]?.src}
+        fallbackOgImageAlt={hero.slides?.[0]?.alt}
         pathForCanonical={pathname}
+        autoJsonLd={{ kind: "webpage", pageName: hero.title || "Our Services" }}
       />
       <PageHeroSlider
         images={hero.slides}

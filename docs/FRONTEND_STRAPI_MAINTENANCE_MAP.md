@@ -4,7 +4,9 @@ This document tells **editors and site owners** which **Strapi Content Manager**
 
 **Strapi Admin:** Content Manager → filter by **Collection** or **Single** type name below. Always **Save** and **Publish** (draft content is hidden on the public site when `draftAndPublish` is on).
 
-**Frontend env only (Vite React app, not Strapi):** `VITE_MOCK_DATA=Yes` (default) allows bundled demo data in the SPA when Strapi is missing or a section is empty; set **`VITE_MOCK_DATA=No`** so only published Strapi content appears (blank CMS fields stay blank). Strapi’s own `.env` does not define this.
+**Backend repo:** Production Strapi is deployed as **uniadmin** (`https://github.com/rajibimran/uniadmin.git`). The SPA is **uniweb** (`https://github.com/rajibimran/uniweb.git`).
+
+**Frontend env only (Vite React app, not Strapi):** `VITE_MOCK_DATA=Yes` (default) allows bundled demo data in the SPA when Strapi is missing or a section is empty; set **`VITE_MOCK_DATA=No`** so only published Strapi content appears (blank CMS fields stay blank). Strapi’s own `.env` does not define this. See **`frontend/.env.example`** — lab staff sign-in uses Strapi **Users & Permissions** (no extra `VITE_*` secrets for uploads).
 
 ---
 
@@ -12,13 +14,27 @@ This document tells **editors and site owners** which **Strapi Content Manager**
 
 | What the visitor sees | Where in Strapi | API / notes |
 |----------------------|-----------------|-------------|
-| Logo, site name, tagline, phone, email, address, hours, map embed, social links; **show/hide Blog & News** (`showBlogSection`, `showNewsSection`); **global comments** (`commentsEnabled`); **contact form** — staff inbox (`contactFormToEmail`), confirmation toggle, **SMTP** (host, port, secure, username, password, From) — passwords are **not** returned by the public API | **Single:** Site Config | `GET /api/site-config` |
+| Logo, site name, tagline, phone, email, address, hours, map embed, social links; **show/hide Blog & News** (`showBlogSection`, `showNewsSection`); **global comments** (`commentsEnabled`); **contact / booking mail** — staff inboxes (`contactFormToEmail`, `bookingFormToEmail`), confirmation toggles, **SMTP** (host, port, secure, username, password, From) — passwords are **not** returned by the public API; optional **`SMTP_*` / `EMAIL_FROM`** on the **server** apply when Site config mail fields are empty | **Single:** Site Config | `GET /api/site-config` |
+| **Footer** — dynamic columns (**`footerColumns`**: title + links via **`site.footer-column`** / **`site.footer-link`**), certification strip title, privacy link label, copyright extra, map placeholder; **legacy** 3-column mode titles/help text (`footerLegacyQuickTitle`, `footerLegacyServicesTitle`, `footerLegacyHelpTitle`, `footerLegacyHelpBody`) when `footerColumns` is empty; brand blurb (`footerBrandExtra`); **certification logos** row still uses **Collection: Certification** | **Single:** Site Config + **Collection:** Certification | Site config + `GET /api/certifications` |
+| **Home “Get in touch”** block headings / success copy | **Single:** Site Config | `quickContactSectionTitle`, `quickContactSectionBody`, `quickContactFormHeading`, `quickContactSuccessHeading`, `quickContactSuccessBody`, `quickContactIframeTitle` |
 | Main menu (and nested items if used) | **Collection:** Navigation | `GET /api/navigations` — order via `order`; parent/child for dropdowns |
-| Footer “quick” column links | **Collection:** Footer Quick Link | `GET /api/footer-quick-links` |
-| Footer “services” column links | **Collection:** Footer Service Link | `GET /api/footer-service-links` |
-| Certification / partner logos in footer | **Collection:** Certification (`name`, `logo`, optional `shortDescription`, optional `verificationUrl`) | `GET /api/certifications` |
+| Footer “quick” column links (legacy layout) | **Collection:** Footer Quick Link | `GET /api/footer-quick-links` |
+| Footer “services” column links (legacy layout) | **Collection:** Footer Service Link | `GET /api/footer-service-links` |
 
 *Loaded once in **`StrapiLayoutContext`** — not per-page.*
+
+**Staff links in the header** (`/staff/lab-reports`, `/staff/login`) are **fixed routes** in the React app, not Strapi Navigation entries.
+
+---
+
+## Staff — lab report PDF upload (not a CMS page)
+
+| What | Where | Notes |
+|------|--------|--------|
+| Bulk upload PDFs tied to passport + phone | **Frontend:** `/staff/login` → `/staff/lab-reports` | Staff authenticate as a Strapi **application user** with role **`lab-staff`** (Users & Permissions). JWT is stored in the browser; uploads go to **`POST /api/lab-report-files/upload`**. |
+| Admin / auditing | **Strapi:** Collection **Lab report PDF** | Rows hold metadata; binary files live under **`private/lab-reports/`** on the server (persist that directory in Docker — see **`STRAPI_INTEGRATION_MANUAL.md`** §10). |
+
+Editors do not “design” this screen in Content Manager; they manage **users/roles** and **Lab report PDF** entries if needed.
 
 ---
 
@@ -31,7 +47,7 @@ This document tells **editors and site owners** which **Strapi Content Manager**
 | Region banner + country pills/cards | `components/home/RegionHighlightsSection.tsx` | **Single:** Region highlights section (`bannerImage`, `bannerTitle`, `bannerDescription`) **and** **Collection:** Country flag (one entry per country, `order`) |
 | Stats, packages, certification strip | `components/home/TrustSection.tsx` | **Collections:** Stat, Service Package, Certification |
 | Country guideline cards / tabs | `components/home/CountryGuidelinesSection.tsx` | **Collection:** Country Guideline |
-| “Get in touch” contact + map + form | `components/home/QuickContactSection.tsx` | **Single:** Site Config (phone, email, address, hours, map). Form → **`POST /api/contact-submissions/submit`** with `formKey` = `home_quick`; rows in **Contact submission** |
+| “Get in touch” contact + map + form | `components/home/QuickContactSection.tsx` | **Single:** Site Config (phone, email, address, hours, map, quick-contact strings). Form → **`POST /api/contact-submissions/submit`** with `formKey` = `home_quick`; rows in **Contact submission** |
 
 ---
 
@@ -50,11 +66,13 @@ This document tells **editors and site owners** which **Strapi Content Manager**
 | Authors (byline) | *(used by blog/news)* | **Collection:** Author |
 | Comment moderation | *(optional)* | **Collection:** Comment — public submits via API; **approve** `isApproved` in admin |
 | Contact form messages | *(home + contact pages)* | **Collection:** Contact submission — each row is one send; filter by **`formKey`** (`contact_page` vs `home_quick`). Optional **`isRead`** for triage. Not publicly listable via REST. |
-| Book appointment | `pages/BookAppointment.tsx` | Hero (`book`), **Single:** Booking Page (`timeSlotLines`: add one “List item” per slot), **Collection:** Service |
-| Report check | `pages/ReportCheck.tsx` | Hero (`reports`), **Single:** Report Page |
+| Book appointment | `pages/BookAppointment.tsx` | Hero (`book`), **Single:** Booking Page (`timeSlotLines`: add one “List item” per slot), **Collection:** Service. **Slots / submissions:** **`GET /api/booking-requests/availability?date=YYYY-MM-DD`**, **`POST /api/booking-requests/submit`** — rows in **Appointment booking** (`booking-request`). |
+| Report check | `pages/ReportCheck.tsx` | Hero (`reports`), **Single:** Report Page (`samplePatientName`, `sampleReportDate`, `sampleStatus`, `supportPhone`, `seo`). **PDF download:** public **`POST /api/lab-report-files/download`** with patient id + phone (matches **Lab report PDF** entries). |
+| Staff login | `pages/StaffLogin.tsx` | Strapi **Users & Permissions** — **`POST /api/lab-report-files/staff-login`** |
+| Staff lab uploads | `pages/LabReportBulkUpload.tsx` | Same; **`POST /api/lab-report-files/upload`** with JWT |
 | Screening process | `pages/ScreeningProcess.tsx` | Hero (`process`), **Single:** Screening Process Page |
 | Contact | `pages/Contact.tsx` | Hero (`contact`), **Collection:** Service (as used on that page), **Contact submission** (via same submit API with `formKey` = `contact_page`) |
-| Fitness criteria | `pages/FitnessPage.tsx` | Hero (`fitness`), **Collection:** Fitness Criterion |
+| Fitness criteria | `pages/FitnessPage.tsx` | Hero (`fitness`), **Single:** Fitness Page (`disclaimer`, `seo`), **Collection:** Fitness Criterion |
 | Equipment | `pages/EquipmentPage.tsx` | Hero (`equipment`), **Collection:** Equipment Item |
 | Privacy policy | `pages/Privacy.tsx` | **Single:** Privacy Page (`sections` = heading + body blocks) |
 
@@ -97,6 +115,13 @@ REST: `/api/products`, `/api/team-members`, `/api/resource-items`, `/api/locatio
 
 ---
 
+## Production reminders (ops)
+
+- **Media files** (`/uploads/...`) live under **`public/uploads`** on the Strapi host. **`git pull` does not sync them** (folder is gitignored). For Docker, **bind-mount or volume** `./public/uploads` so rebuilds do not wipe uploads; keep **database + uploads** backups together.
+- **CORS:** Backend **`FRONTEND_URLS`** (comma-separated) must include the live SPA origin (see **`STRAPI_INTEGRATION_MANUAL.md`** §10.3).
+
+---
+
 ## Keeping this map accurate
 
 When you add a **new page** or **section component**:
@@ -110,4 +135,4 @@ When you add a **new page** or **section component**:
 ## Related docs
 
 - **`universal_strapi_guide.md`** — Full contract: fields, endpoints, permissions, pitfalls, roadmap §24.
-- **`STRAPI_INTEGRATION_MANUAL.md`** — Integration detail and tables for this app.
+- **`STRAPI_INTEGRATION_MANUAL.md`** — Integration detail, Docker/media troubleshooting, and tables for this app.

@@ -18,8 +18,9 @@ const LOCAL_GUIDELINES_FALLBACK: CountryGuideline[] = [
     id: "ksa",
     name: "Saudi Arabia",
     flag: "https://flagcdn.com/w80/sa.png",
-    processingTime: "2 to 4 working days",
-    approvalNote: "100% WAFID Approved",
+    details: "Results typically upload in 2 to 4 working days (WAFID / GAMCA).",
+    marketingPoint1: "Medical report validity per embassy rules",
+    marketingPoint2: "100% WAFID Approved",
     expertTip:
       "Book your KSA medical appointment at least 2 weeks before your intended travel date. Early morning slots (9 AM) are best to avoid long waiting times.",
     mandatoryTests:
@@ -35,8 +36,9 @@ const LOCAL_GUIDELINES_FALLBACK: CountryGuideline[] = [
     id: "uae",
     name: "United Arab Emirates",
     flag: "https://flagcdn.com/w80/ae.png",
-    processingTime: "2 to 3 working days",
-    approvalNote: "100% WAFID Approved",
+    details: "Results typically upload in 2 to 3 working days (WAFID / GAMCA).",
+    marketingPoint1: "Medical report validity per embassy rules",
+    marketingPoint2: "100% WAFID Approved",
     expertTip:
       "UAE has separate health authorities for each emirate — DHA for Dubai, HAAD for Abu Dhabi. Ensure your medical center is authorized for your specific emirate destination.",
     mandatoryTests:
@@ -52,8 +54,9 @@ const LOCAL_GUIDELINES_FALLBACK: CountryGuideline[] = [
     id: "qatar",
     name: "Qatar",
     flag: "https://flagcdn.com/w80/qa.png",
-    processingTime: "3 to 5 working days",
-    approvalNote: "100% WAFID Approved",
+    details: "Results typically upload in 3 to 5 working days (WAFID / GAMCA).",
+    marketingPoint1: "Medical report validity per embassy rules",
+    marketingPoint2: "100% WAFID Approved",
     expertTip:
       "Qatar's medical requirements have become more stringent since FIFA 2022 infrastructure projects. Book early and ensure all vaccinations are up to date before your appointment.",
     mandatoryTests:
@@ -69,8 +72,9 @@ const LOCAL_GUIDELINES_FALLBACK: CountryGuideline[] = [
     id: "kuwait",
     name: "Kuwait",
     flag: "https://flagcdn.com/w80/kw.png",
-    processingTime: "3 to 5 working days",
-    approvalNote: "100% WAFID Approved",
+    details: "Results typically upload in 3 to 5 working days (WAFID / GAMCA).",
+    marketingPoint1: "Medical report validity per embassy rules",
+    marketingPoint2: "100% WAFID Approved",
     expertTip:
       "Kuwait has strict age-related criteria for certain job categories. Verify your eligibility before booking to avoid unnecessary costs and delays.",
     mandatoryTests:
@@ -86,8 +90,9 @@ const LOCAL_GUIDELINES_FALLBACK: CountryGuideline[] = [
     id: "bahrain",
     name: "Bahrain",
     flag: "https://flagcdn.com/w80/bh.png",
-    processingTime: "2 to 3 working days",
-    approvalNote: "100% WAFID Approved",
+    details: "Results typically upload in 2 to 3 working days (WAFID / GAMCA).",
+    marketingPoint1: "Medical report validity per embassy rules",
+    marketingPoint2: "100% WAFID Approved",
     expertTip:
       "Bahrain's process is one of the most streamlined in the GCC. Results are typically available faster than other countries. Morning appointments generally have shorter wait times.",
     mandatoryTests:
@@ -103,8 +108,9 @@ const LOCAL_GUIDELINES_FALLBACK: CountryGuideline[] = [
     id: "oman",
     name: "Oman",
     flag: "https://flagcdn.com/w80/om.png",
-    processingTime: "3 to 5 working days",
-    approvalNote: "100% WAFID Approved",
+    details: "Results typically upload in 3 to 5 working days (WAFID / GAMCA).",
+    marketingPoint1: "Medical report validity per embassy rules",
+    marketingPoint2: "100% WAFID Approved",
     expertTip:
       "Oman requires all medical certificates to be attested by the Omani Embassy. Start the process early as attestation may add 2-3 extra days to your timeline.",
     mandatoryTests:
@@ -225,23 +231,28 @@ const CountryGuidelinesSection = () => {
                   </h3>
                 </div>
                 <div className="w-10 h-[3px] bg-accent rounded-full mb-3 sm:mb-[16px]" />
-                <p className="font-body text-sm text-muted-foreground leading-relaxed">
-                  The medical results for {country.name} typically take{" "}
-                  <span className="font-semibold text-foreground">
-                    {country.processingTime}
-                  </span>{" "}
-                  to be processed and uploaded to the WAFID (GAMCA) portal.
-                </p>
-                <div className="mt-4 space-y-2 sm:mt-[16px] sm:space-y-[8px]">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-body">Valid for medical report</span>
+                {country.details ? (
+                  <RichText
+                    value={country.details}
+                    className="font-body text-sm text-muted-foreground leading-relaxed [&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed"
+                  />
+                ) : null}
+                {country.marketingPoint1 || country.marketingPoint2 ? (
+                  <div className={`space-y-2 sm:space-y-[8px] ${country.details ? "mt-4 sm:mt-[16px]" : ""}`}>
+                    {country.marketingPoint1 ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4 text-primary shrink-0" />
+                        <span className="font-body">{country.marketingPoint1}</span>
+                      </div>
+                    ) : null}
+                    {country.marketingPoint2 ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                        <span className="font-body">{country.marketingPoint2}</span>
+                      </div>
+                    ) : null}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
-                    <span className="font-body">{country.approvalNote}</span>
-                  </div>
-                </div>
+                ) : null}
                 <Link to="/book" className="block mt-4 sm:mt-[20px]">
                   <Button className="w-full h-[44px] rounded-[4px] bg-accent font-heading text-sm font-semibold text-accent-foreground hover:bg-accent/90">
                     Book for {country.name}

@@ -74,7 +74,10 @@ const Blog = () => {
           layers={hero?.seo ? [hero.seo] : []}
           fallbackTitle={formatPageTitle("Health Resources & Blog", siteName)}
           fallbackDescription={hero?.subtitle ?? defaultBlogHero.subtitle}
+          fallbackOgImage={hero?.slides?.[0]?.src}
+          fallbackOgImageAlt={hero?.slides?.[0]?.alt}
           pathForCanonical={pathname}
+          autoJsonLd={{ kind: "webpage", pageName: "Health Resources & Blog" }}
         />
         <section className="relative min-h-[400px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading blog" />
         <PageBreadcrumb items={[{ label: "Blog" }]} />
@@ -93,7 +96,10 @@ const Blog = () => {
         layers={[hero.seo]}
         fallbackTitle={formatPageTitle(hero.title || "Health Resources & Blog", siteName)}
         fallbackDescription={hero.subtitle}
+        fallbackOgImage={hero.slides?.[0]?.src}
+        fallbackOgImageAlt={hero.slides?.[0]?.alt}
         pathForCanonical={pathname}
+        autoJsonLd={{ kind: "webpage", pageName: hero.title || "Health Resources & Blog" }}
       />
       <PageHeroSlider
         images={hero.slides}

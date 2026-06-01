@@ -120,11 +120,17 @@ const Footer = () => {
         <div className={`grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-[32px] ${mainGridClass}`}>
           <div>
             <div className="flex items-center gap-[8px] mb-4 sm:mb-[16px]">
-              <img
-                src={siteConfig.logo}
-                alt={`${siteConfig.siteName} Logo`}
-                className="h-[36px] w-auto brightness-0 invert"
-              />
+              {siteConfig.footerLogo?.trim() ? (
+                <img
+                  src={siteConfig.footerLogo}
+                  alt={`${siteConfig.siteName} logo`}
+                  className="h-[36px] w-auto max-w-[220px] object-contain object-left sm:h-10"
+                />
+              ) : siteConfig.siteName?.trim() ? (
+                <p className="font-heading text-xl font-bold leading-tight tracking-tight text-background sm:text-2xl">
+                  {siteConfig.siteName}
+                </p>
+              ) : null}
             </div>
             <p className="font-body text-xs leading-relaxed text-background/80 mb-4 sm:text-sm sm:mb-[16px]">
               {siteConfig.tagline}

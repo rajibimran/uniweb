@@ -382,19 +382,39 @@ function mapPageSeo(raw: unknown): PageSeo | undefined {
   const row = flattenStrapiEntity(raw);
   if (!row) return undefined;
   const metaTitle = String(row.metaTitle ?? "").trim();
-  if (!metaTitle) return undefined;
+  const metaDescription = String(row.metaDescription ?? "").trim();
+  const metaKeywords = String(row.metaKeywords ?? "").trim();
+  const canonicalPath = String(row.canonicalPath ?? "").trim();
+  const openGraphImage = resolveMediaToAbsolute(row.openGraphImage) ?? "";
+  const openGraphImageAlt = String(row.openGraphImageAlt ?? "").trim();
+  const snippetForAiOverview = String(row.snippetForAiOverview ?? "").trim();
+  const structuredData = parseStructuredDataField(row.structuredData);
+  const noIndex = Boolean(row.noIndex);
   const tw = row.twitterCard;
+
+  const hasPayload =
+    Boolean(metaTitle) ||
+    Boolean(metaDescription) ||
+    Boolean(metaKeywords) ||
+    Boolean(canonicalPath) ||
+    Boolean(openGraphImage) ||
+    structuredData != null ||
+    Boolean(snippetForAiOverview) ||
+    noIndex;
+
+  if (!hasPayload) return undefined;
+
   return {
     metaTitle,
-    metaDescription: String(row.metaDescription ?? ""),
-    metaKeywords: String(row.metaKeywords ?? "").trim(),
-    canonicalPath: String(row.canonicalPath ?? "").trim(),
-    openGraphImage: resolveMediaToAbsolute(row.openGraphImage) ?? "",
-    openGraphImageAlt: String(row.openGraphImageAlt ?? "").trim(),
+    metaDescription,
+    metaKeywords,
+    canonicalPath,
+    openGraphImage,
+    openGraphImageAlt,
     twitterCard: tw === "summary" || tw === "summary_large_image" ? tw : "summary_large_image",
-    structuredData: parseStructuredDataField(row.structuredData),
-    noIndex: Boolean(row.noIndex),
-    snippetForAiOverview: String(row.snippetForAiOverview ?? "").trim(),
+    structuredData,
+    noIndex,
+    snippetForAiOverview,
   };
 }
 
@@ -404,11 +424,13 @@ function mapSiteConfig(raw: unknown, defaults: SiteConfig): SiteConfig {
   if (!flat) return base;
 
   const logo = resolveMediaToAbsolute(flat.logo) ?? base.logo;
+  const footerLogo = resolveMediaToAbsolute(flat.footerLogo) ?? base.footerLogo ?? "";
 
   return {
     siteName: String(flat.siteName ?? base.siteName),
     tagline: String(flat.tagline ?? base.tagline),
     logo,
+    footerLogo,
     phone: String(flat.phone ?? base.phone),
     email: String(flat.email ?? base.email),
     address: String(flat.address ?? base.address),
@@ -447,6 +469,9 @@ function mapSiteConfig(raw: unknown, defaults: SiteConfig): SiteConfig {
     quickContactSuccessHeading: String(flat.quickContactSuccessHeading ?? base.quickContactSuccessHeading ?? "").trim(),
     quickContactSuccessBody: String(flat.quickContactSuccessBody ?? base.quickContactSuccessBody ?? "").trim(),
     quickContactIframeTitle: String(flat.quickContactIframeTitle ?? base.quickContactIframeTitle ?? "").trim(),
+    homeServicesEyebrow: String(flat.homeServicesEyebrow ?? base.homeServicesEyebrow ?? "").trim(),
+    homeServicesHeading: String(flat.homeServicesHeading ?? base.homeServicesHeading ?? "").trim(),
+    homeServicesSubheading: String(flat.homeServicesSubheading ?? base.homeServicesSubheading ?? "").trim(),
   };
 }
 
@@ -567,11 +592,22 @@ function mapAboutPage(raw: unknown, defaults: AboutPageContent): AboutPageConten
   };
 }
 
+function normalizePriority(val: unknown): number {
+  const n = Number(val ?? 0);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.trunc(n));
+}
+
 function mapServiceCards(raw: unknown, fallback: ServiceCard[]): ServiceCard[] {
   const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
   if (list.length === 0) return base;
-  return list.map((row) => {
+  const sorted = [...list].sort(
+    (a, b) =>
+      normalizePriority(a.priority) - normalizePriority(b.priority) ||
+      String(a.title ?? "").localeCompare(String(b.title ?? ""))
+  );
+  return sorted.map((row) => {
     const slug = String(row.slug ?? "");
     const cardImage = resolveMediaToAbsolute(row.cardImage) ?? resolveMediaToAbsolute(row.heroImage);
     const iconImage = resolveMediaToAbsolute(row.iconImage);
@@ -973,8 +1009,13 @@ function mapCountryGuidelineList(raw: unknown, fallback: CountryGuideline[]): Co
   const base = IS_MOCK_DATA_ENABLED ? fallback : [];
   const list = unwrapStrapiCollection(raw);
   if (list.length === 0) return base;
+  const sorted = [...list].sort(
+    (a, b) =>
+      normalizePriority(a.priority) - normalizePriority(b.priority) ||
+      String(a.name ?? "").localeCompare(String(b.name ?? ""))
+  );
   const out: CountryGuideline[] = [];
-  for (const row of list) {
+  for (const row of sorted) {
     const countryId = String(row.countryId ?? "").trim();
     if (!countryId) continue;
     const flagUrl =
@@ -983,8 +1024,11 @@ function mapCountryGuidelineList(raw: unknown, fallback: CountryGuideline[]): Co
       id: countryId,
       name: String(row.name ?? ""),
       flag: flagUrl,
-      processingTime: String(row.processingTime ?? ""),
-      approvalNote: String(row.approvalNote ?? ""),
+      details:
+        strapiRichOrTextToMarkdown(row.details) ||
+        String(row.details ?? row.processingTime ?? "").trim(),
+      marketingPoint1: String(row.marketingPoint1 ?? "").trim(),
+      marketingPoint2: String(row.marketingPoint2 ?? row.approvalNote ?? "").trim(),
       expertTip: String(row.expertTip ?? ""),
       mandatoryTests: String(row.mandatoryTests ?? ""),
       rejectionCriteria: String(row.rejectionCriteria ?? ""),
@@ -1126,6 +1170,8 @@ export interface SiteConfig {
   siteName: string;
   tagline: string;
   logo: string;
+  /** Optional logo for dark footer; empty → show `siteName` as text. */
+  footerLogo: string;
   phone: string;
   email: string;
   address: string;
@@ -1168,12 +1214,17 @@ export interface SiteConfig {
   quickContactSuccessHeading?: string;
   quickContactSuccessBody?: string;
   quickContactIframeTitle?: string;
+  /** Home services section — header copy. */
+  homeServicesEyebrow?: string;
+  homeServicesHeading?: string;
+  homeServicesSubheading?: string;
 }
 
 export const defaultSiteConfig: SiteConfig = {
   siteName: "Unicare Medical Services",
   tagline: "GCC Approved Medical Center",
   logo: "https://unicaremedicalbd.co/assets/img/logo_unicare.png",
+  footerLogo: "",
   phone: "+88 02 48316027",
   email: "unicaremedicalbd@gmail.com",
   address: "13/1, New Eskaton Road (2nd Floor), Moghbazar, Dhaka",
@@ -1205,6 +1256,10 @@ export const defaultSiteConfig: SiteConfig = {
   quickContactSuccessHeading: "Message Sent!",
   quickContactSuccessBody: "We'll get back to you within 24 hours.",
   quickContactIframeTitle: "Clinic location",
+  homeServicesEyebrow: "Clinical services",
+  homeServicesHeading: "Imaging, labs & visa medicals",
+  homeServicesSubheading:
+    "End-to-end pathways — specimen handling, imaging, review, and documentation for overseas clearance.",
 };
 
 /** Neutral layout shell when `VITE_MOCK_DATA=No` and Strapi fields are empty or unreachable. */
@@ -1212,6 +1267,7 @@ export const emptySiteConfig: SiteConfig = {
   siteName: "",
   tagline: "",
   logo: "",
+  footerLogo: "",
   phone: "",
   email: "",
   address: "",
@@ -1241,10 +1297,17 @@ export const emptySiteConfig: SiteConfig = {
   quickContactSuccessHeading: "",
   quickContactSuccessBody: "",
   quickContactIframeTitle: "",
+  homeServicesEyebrow: "",
+  homeServicesHeading: "",
+  homeServicesSubheading: "",
 };
 
+/** Strapi v5: `populate=*` combined with nested populates drops top-level `logo`; use explicit populates only. */
 const SITE_CONFIG_POPULATE = [
-  "populate=*",
+  "populate[logo][fields][0]=url",
+  "populate[logo][fields][1]=alternativeText",
+  "populate[footerLogo][fields][0]=url",
+  "populate[footerLogo][fields][1]=alternativeText",
   "populate[footerColumns][populate][links]=*",
   "populate[defaultSeo][populate][openGraphImage][fields][0]=url",
   "populate[defaultSeo][populate][openGraphImage][fields][1]=alternativeText",
@@ -1338,7 +1401,8 @@ export const serviceCategoriesApi = {
 
 // ── Services ──
 export const servicesApi = {
-  getAll: () => strapiGet(`services?${SERVICE_POPULATE}`, defaultServices, (raw) => mapServiceCards(raw, defaultServices)),
+  getAll: () =>
+    strapiGet(`services?${SERVICE_POPULATE}&sort=priority:asc`, defaultServices, (raw) => mapServiceCards(raw, defaultServices)),
   getBySlug: (slug: string) =>
     strapiGet(
       `services?filters[slug][$eq]=${encodeURIComponent(slug)}&${SERVICE_POPULATE}`,
@@ -1494,8 +1558,9 @@ export interface CountryGuideline {
   id: string;
   name: string;
   flag: string;
-  processingTime: string;
-  approvalNote: string;
+  details: string;
+  marketingPoint1: string;
+  marketingPoint2: string;
   expertTip: string;
   mandatoryTests: string;
   rejectionCriteria: string;
@@ -1505,8 +1570,10 @@ export interface CountryGuideline {
 
 export const countryGuidelinesApi = {
   getAll: (mockData: CountryGuideline[]) =>
-    strapiGet<CountryGuideline[]>("country-guidelines?populate=*", mockData, (raw) =>
-      mapCountryGuidelineList(raw, mockData)
+    strapiGet<CountryGuideline[]>(
+      "country-guidelines?populate=*&sort=priority:asc",
+      mockData,
+      (raw) => mapCountryGuidelineList(raw, mockData)
     ),
 };
 
@@ -1634,7 +1701,7 @@ export const bookingRequestsApi = {
   },
   submit: async (payload: {
     patientName: string;
-    email: string;
+    email?: string;
     phone: string;
     serviceId: string;
     serviceTitle?: string;

@@ -1,6 +1,6 @@
-# Frontend (Vite + React)
+# um_web — Unicare Medical Services (Vite + React)
 
-Strapi-backed marketing site. Environment variables:
+Strapi-backed marketing site. Pair with **`um_admin`** (Strapi on port **1337** locally). Environment variables:
 
 - `VITE_STRAPI_URL` — Strapi base URL (no trailing slash required if your helpers normalize it)
 - `VITE_STRAPI_API_KEY` — read-only API token for public content

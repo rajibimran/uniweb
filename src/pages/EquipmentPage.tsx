@@ -56,7 +56,10 @@ const EquipmentPage = () => {
           layers={hero?.seo ? [hero.seo] : []}
           fallbackTitle={formatPageTitle("Medical Equipment", siteName)}
           fallbackDescription={hero?.subtitle ?? defaultEquipmentHero.subtitle}
+          fallbackOgImage={hero?.slides?.[0]?.src}
+          fallbackOgImageAlt={hero?.slides?.[0]?.alt}
           pathForCanonical={pathname}
+          autoJsonLd={{ kind: "webpage", pageName: "Medical Equipment" }}
         />
         <section className="relative min-h-[400px] animate-pulse bg-muted" aria-busy="true" aria-label="Loading equipment page" />
         <PageBreadcrumb items={[{ label: "Medical Equipment" }]} />
@@ -80,7 +83,10 @@ const EquipmentPage = () => {
         layers={[hero.seo]}
         fallbackTitle={formatPageTitle(hero.title || "Medical Equipment", siteName)}
         fallbackDescription={hero.subtitle}
+        fallbackOgImage={hero.slides?.[0]?.src}
+        fallbackOgImageAlt={hero.slides?.[0]?.alt}
         pathForCanonical={pathname}
+        autoJsonLd={{ kind: "webpage", pageName: hero.title || "Medical Equipment" }}
       />
       <PageHeroSlider
         images={hero.slides}
