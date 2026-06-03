@@ -34,7 +34,7 @@ dist-ssr
 Untitled
 
 ############################
-# Docker
+# Docker (VPS may maintain its own stack — do not commit if using server-side image)
 ############################
 
 docker-compose.yml
