@@ -1,6 +1,5 @@
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
-import { CertificationBadgeMedia } from "@/components/cert/CertificationBadgeMedia";
 import { RichText } from "@/components/content/RichText";
 import { useStrapiLayout } from "@/contexts/StrapiLayoutContext";
 import { IS_STRAPI_CONFIGURED, type FooterColumnConfig } from "@/lib/api";
@@ -69,7 +68,7 @@ function FooterDynamicColumn({
 }
 
 const Footer = () => {
-  const { layoutReady, siteConfig, footerQuickLinks, footerServiceLinks, certifications } = useStrapiLayout();
+  const { layoutReady, siteConfig, footerQuickLinks, footerServiceLinks } = useStrapiLayout();
 
   const telHref = siteConfig.phone ? `tel:${siteConfig.phone.replace(/[^\d+]/g, "")}` : "tel:";
   const fb = siteConfig.socialLinks.facebook;
@@ -77,7 +76,6 @@ const Footer = () => {
   const li = siteConfig.socialLinks.linkedin;
   const footerCols = siteConfig.footerColumns && siteConfig.footerColumns.length > 0 ? siteConfig.footerColumns : null;
   const mapIframeTitle = siteConfig.quickContactIframeTitle?.trim() || `${siteConfig.siteName || "Clinic"} location`;
-  const certTitle = siteConfig.footerCertStripTitle?.trim() || "Approved & Certified By";
   const privacyLabel = siteConfig.footerPrivacyLinkLabel?.trim() || "Privacy Policy";
   const mapPlaceholder = siteConfig.footerMapPlaceholderLabel?.trim() || "Map Placeholder";
   const copyrightExtra = siteConfig.footerCopyrightExtra?.trim() || ", Dhaka. All rights reserved.";
@@ -102,11 +100,6 @@ const Footer = () => {
                 <div className="h-3 w-full animate-pulse rounded bg-background/10" />
                 <div className="h-3 w-2/3 animate-pulse rounded bg-background/10" />
               </div>
-            ))}
-          </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-2 border-t border-background/20 pt-6">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-8 w-20 animate-pulse rounded bg-background/10" />
             ))}
           </div>
         </div>
@@ -243,26 +236,7 @@ const Footer = () => {
           )}
         </div>
 
-        <div className="mt-8 border-t border-background/20 pt-4 sm:mt-[48px] sm:pt-[24px]">
-          <p className="font-body text-[10px] text-background/60 text-center mb-3 sm:text-xs sm:mb-[16px]">{certTitle}</p>
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-[24px]">
-            {certifications.map((cert) => (
-              <div
-                key={cert.id}
-                className="flex h-8 items-center justify-center rounded bg-background/10 px-3 font-heading text-[10px] font-semibold text-background/70 sm:h-[40px] sm:px-[16px] sm:text-xs"
-              >
-                <CertificationBadgeMedia
-                  cert={cert}
-                  className="flex max-h-full min-h-0 max-w-full items-center justify-center text-inherit no-underline opacity-90 hover:opacity-100"
-                  classNameImg="max-h-6 max-w-[100px] object-contain sm:max-h-8 sm:max-w-[120px]"
-                  classNameText=""
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4 border-t border-background/20 pt-4 flex flex-col items-center gap-3 sm:mt-[24px] sm:pt-[16px] sm:flex-row sm:justify-between sm:gap-[12px]">
+        <div className="mt-4 border-t border-background/20 pt-4 flex flex-col items-center gap-3 sm:mt-[48px] sm:pt-[16px] sm:flex-row sm:justify-between sm:gap-[12px]">
           <p className="font-body text-[10px] text-background/50 text-center sm:text-xs">
             © {new Date().getFullYear()} {siteConfig.siteName}
             {copyrightExtra}
