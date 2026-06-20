@@ -112,16 +112,33 @@ const Blog = () => {
 
       <section className="py-[48px]">
         <div className="container">
-          <div className="mb-[24px] flex flex-col gap-[12px] sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative max-w-md flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full max-w-md">
+              <Search
+                  className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-3 w-3 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+              />
               <Input
-                type="search"
-                placeholder="Search articles by title, excerpt, or category…"
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                className="pl-10"
-                aria-label="Search blog articles"
+                  type="text"
+                  inputMode="search"
+                  placeholder="Search articles by title, excerpt, or category…"
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  className="
+                    h-11
+                    w-full
+                    rounded-xl
+                    border
+                    bg-background
+                    pl-11
+                    pr-4
+                    text-sm
+                    leading-none
+                    placeholder:text-muted-foreground/70
+                    focus-visible:ring-2
+                    focus-visible:ring-primary/30
+                  "
+                  aria-label="Search blog articles"
               />
             </div>
           </div>
