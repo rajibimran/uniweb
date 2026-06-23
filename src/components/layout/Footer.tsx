@@ -129,7 +129,6 @@ const Footer = () => {
               {siteConfig.tagline}
               {siteConfig.footerBrandExtra ? (
                 <>
-                  {siteConfig.tagline ? ". " : ""}
                   {siteConfig.footerBrandExtra}
                 </>
               ) : null}

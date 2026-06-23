@@ -254,7 +254,11 @@ const Services = () => {
                               <XIcon className="mx-auto h-4 w-4 text-red-600" />
                             )
                           ) : (
-                            <span className="font-body text-sm text-foreground">{val}</span>
+                            val == 'yes' ? (
+                            <Check className="mx-auto h-4 w-4 text-green-600" />
+                            ) : (
+                            <XIcon className="mx-auto h-4 w-4 text-red-600" />
+                            )
                           )}
                         </td>
                       );

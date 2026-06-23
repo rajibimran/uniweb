@@ -304,7 +304,7 @@ export const comparisonData: ComparisonRow[] = [
   { feature: "Blood Tests (CBC, Biochemistry)", physical: false, radiology: false, laboratory: true, vaccination: false },
   { feature: "Serology (HIV, HBs Ag, HCV, VDRL)", physical: false, radiology: false, laboratory: true, vaccination: false },
   { feature: "Urine & Stool Analysis", physical: false, radiology: false, laboratory: true, vaccination: false },
-  { feature: "MMR & Meningococcal", physical: false, radiology: false, laboratory: false, vaccination: true },
+  { feature: "MMR & Meningococcal", physical: "yes", radiology: "no", laboratory: "no", vaccination: "yes" },
   { feature: "Report Turnaround", physical: "Same day", radiology: "Same day", laboratory: "24 hours", vaccination: "Immediate" },
 ];
 
