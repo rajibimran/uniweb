@@ -123,6 +123,7 @@ const News = () => {
                   className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-3 w-3 -translate-y-1/2 text-muted-foreground"
                   aria-hidden="true"
               />
+
               <Input
                   type="text"
                   inputMode="search"
