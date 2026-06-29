@@ -52,6 +52,8 @@ const ReportCheck = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfFilename, setPdfFilename] = useState<string | undefined>();
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (!IS_STRAPI_CONFIGURED) return;
@@ -74,6 +76,11 @@ const ReportCheck = () => {
     };
   }, [pdfUrl]);
 
+  useEffect(() => {
+    const checkMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobile(checkMobile);
+  }, []);
+
   const validate = (): boolean => {
     const normalized = passportNumber.trim().toUpperCase().replace(/\s+/g, "");
     if (!normalized) {
@@ -95,6 +102,7 @@ const ReportCheck = () => {
       URL.revokeObjectURL(pdfUrl);
       setPdfUrl(null);
     }
+    setPdfFilename(undefined);
 
     if (!validate()) return;
 
@@ -106,7 +114,10 @@ const ReportCheck = () => {
           setNotFound(true);
           return;
         }
+        console.log('API Response:', res);
         setPdfUrl(URL.createObjectURL(res.blob));
+        setPdfFilename(res.filename);
+        console.log('Set filename:', res.filename);
         return;
       }
 
@@ -212,15 +223,54 @@ const ReportCheck = () => {
 
                   {pdfUrl && (
                     <div className="mt-[24px]">
-                      <div className="mb-[12px] flex items-center gap-[8px]">
-                        <ShieldCheck className="h-5 w-5 text-accent" />
-                        <span className="font-heading text-sm font-semibold text-accent">Report found</span>
+                      <div className="mb-[12px] flex items-center justify-between gap-[8px]">
+                        <div className="flex items-center gap-[8px]">
+                          <ShieldCheck className="h-5 w-5 text-accent" />
+                          <span className="font-heading text-sm font-semibold text-accent">Report found</span>
+                        </div>
+                        {!isMobile && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => {
+                              const a = document.createElement('a');
+                              a.href = pdfUrl;
+                              a.download = pdfFilename || `${passportNumber.trim()}.pdf`;
+                              a.click();
+                            }}
+                          >
+                            Download PDF
+                          </Button>
+                        )}
                       </div>
-                      <iframe
-                        title="Medical report PDF"
-                        src={pdfUrl}
-                        className="h-[min(75vh,720px)] w-full rounded-lg border border-border bg-muted"
-                      />
+                      {isMobile ? (
+                        <div className="text-center space-y-4">
+                          <p className="font-body text-sm text-muted-foreground">
+                            Your medical report is ready to view.
+                          </p>
+                          <Button
+                            type="button"
+                            className="w-full h-[48px] rounded-[4px] bg-primary px-[24px] py-[12px] font-heading text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                            onClick={() => {
+                              const a = document.createElement('a');
+                              a.href = pdfUrl;
+                              a.target = '_blank';
+                              a.download = pdfFilename || `${passportNumber.trim()}.pdf`;
+                              a.click();
+                            }}
+                          >
+                            Open / Download Report
+                          </Button>
+                        </div>
+                      ) : (
+                        <iframe
+                          title="Medical report PDF"
+                          src={pdfUrl}
+                          className="h-[min(75vh,720px)] w-full rounded-lg border border-border bg-muted"
+                        />
+                      )}
                     </div>
                   )}
                 </div>
